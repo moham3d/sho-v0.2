@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Search - Al-Shorouk Radiology Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/css/custom.css" rel="stylesheet">
+    <style>
+        .navbar-brand {
+            font-weight: bold;
+        }
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .search-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-custom {
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-size: 1.1em;
+        }
+        .form-control:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+        }
+        .patient-info {
+            background-color: #f8f9fa;
+            border-left: 4px solid #28a745;
+        }
+        .error-message {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .ssn-input {
+            font-size: 1.2em;
+            letter-spacing: 2px;
+        }
+        .autocomplete-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .autocomplete-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #f8f9fa;
+        }
+        .autocomplete-item:hover {
+            background-color: #f8f9fa;
+        }
+        .autocomplete-item:last-child {
+            border-bottom: none;
+        }
+        .patient-name {
+            font-weight: bold;
+            color: #495057;
+        }
+        .patient-details {
+            font-size: 0.875em;
+            color: #495057;
+        }
+        .assessment-status .badge {
+            font-size: 0.75em;
+            padding: 0.375em 0.5em;
+        }
+        .table th {
+            border-top: none;
+            font-weight: 600;
+            font-size: 0.875em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .table td {
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <%- include('navigation', { currentPage: 'search-patient' }) %>
+
+    <div class="container mt-4">
+        <!-- Screen Reader Announcements -->
+        <div id="sr-announcements" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="text-center">
+                    <h1><i class="fas fa-search me-2 text-info"></i>Patient Search</h1>
+                    <p class="text-muted">Search for existing patients to start a new assessment</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Message -->
+        <% if (error) { %>
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="alert alert-danger" role="alert" aria-live="assertive">
+                        <i class="fas fa-exclamation-triangle me-2" aria-hidden="true"></i>
+                        <%= error %>
+                        <% if (error.includes('Patient not found')) { %>
+                            <div class="text-center mt-3">
+                                <a href="/nurse/add-patient<%= typeof searchedSSN !== 'undefined' ? '?ssn=' + encodeURIComponent(searchedSSN) : '' %>" class="btn btn-primary">
+                                    <i class="fas fa-user-plus me-2"></i>Add New Patient
+                                </a>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        <% } %>
+
+        <!-- Client-side Error Message -->
+        <div class="row mb-4" id="clientErrorContainer" style="display: none;" aria-live="assertive" role="alert">
+            <div class="col-12">
+                <div class="alert alert-danger" id="clientErrorMessage">
+                    <!-- Error content will be inserted here by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Search Form -->
+        <div class="row justify-content-center mb-4">
+            <div class="col-lg-8">
+                <div class="card search-card">
+                    <div class="card-body p-4">
+                        <h2 class="card-title text-center mb-4">
+                            <i class="fas fa-search me-2"></i>Search for Patient
+                        </h2>
+                        <form method="POST" action="/nurse/search-patient" role="search" aria-label="Patient search form">
+                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                            <div class="mb-4" style="position: relative;">
+                                <label for="patientSearch" class="form-label fs-5">Search by Patient SSN</label>
+                                <input type="text" class="form-control form-control-lg" id="patientSearch"
+                                       placeholder="Type patient SSN (14 digits)..."
+                                       autocomplete="off"
+                                       aria-describedby="patientSearchHelp patientSearchError"
+                                       aria-invalid="false">
+                                <div class="form-text text-center" id="patientSearchHelp">
+                                    <small>Type at least 2 digits to search</small>
+                                </div>
+                                <div id="patientSearchError" class="invalid-feedback" style="display: none;" role="alert" aria-live="polite">
+                                    <!-- Validation error messages will appear here -->
+                                </div>
+                                <div id="autocompleteResults" class="autocomplete-results" style="display: none;" role="listbox" aria-label="Patient search results">
+                                    <!-- Autocomplete results will appear here -->
+                                </div>
+                            </div>
+                            <div class="mb-4" id="ssnSection" style="display: none;">
+                                <h3 class="text-center mb-3">Confirm Patient Details</h3>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="patientName" class="form-label">Patient Name</label>
+                                        <input type="text" class="form-control form-control-lg text-center"
+                                               id="patientName" readonly
+                                               aria-describedby="patientNameHelp">
+                                        <div class="form-text text-center" id="patientNameHelp">
+                                            <small>Patient's full name</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="ssn" class="form-label">Patient SSN</label>
+                                        <input type="text" class="form-control form-control-lg ssn-input text-center"
+                                               id="ssn" name="ssn" placeholder="14-digit SSN"
+                                               pattern="\d{14}" maxlength="14" required
+                                               aria-describedby="ssnHelp ssnError"
+                                               aria-invalid="false">
+                                        <div class="form-text text-center" id="ssnHelp">
+                                            <small>14-digit Egyptian SSN</small>
+                                        </div>
+                                        <div id="ssnError" class="invalid-feedback" style="display: none;" role="alert" aria-live="polite">
+                                            <!-- SSN validation error messages will appear here -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-success btn-custom" id="searchBtn" disabled
+                                        aria-describedby="searchBtnStatus">
+                                    <i class="fas fa-check-circle me-2" aria-hidden="true"></i>
+                                    <span id="searchBtnText">Confirm Patient Info & Start Assessment</span>
+                                </button>
+                                <div id="searchBtnStatus" class="sr-only" aria-live="polite">
+                                    Button is currently disabled. Please complete the patient search first.
+                                </div>
+                                <div id="searchLoadingIndicator" class="sr-only" aria-live="assertive" aria-atomic="true">
+                                    <!-- Loading status announcements will appear here -->
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Patient Found -->
+        <% if (patient) { %>
+            <div class="row justify-content-center mb-4">
+                <div class="col-lg-8">
+                    <div class="card patient-info">
+                        <div class="card-body">
+                            <h2 class="card-title text-success mb-3">
+                                <i class="fas fa-check-circle me-2"></i>Patient Found
+                            </h2>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Full Name:</strong> <%= patient.full_name %></p>
+                                    <p><strong>SSN:</strong> <%= patient.ssn %></p>
+                                    <p><strong>Medical Number:</strong> <%= patient.medical_number || 'Not provided' %></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Mobile:</strong> <%= patient.mobile_number || 'Not provided' %></p>
+                                    <p><strong>Date of Birth:</strong> <%= patient.date_of_birth ? new Date(patient.date_of_birth).toLocaleDateString() : 'Not provided' %></p>
+                                    <p><strong>Gender:</strong> <%= patient.gender || 'Not provided' %></p>
+                                </div>
+                            </div>
+                            <% if (typeof visitId !== 'undefined' && visitId) { %>
+                            <hr>
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>New Visit Created:</strong> A new patient visit has been automatically created.
+                                You will be redirected to the assessment form to begin the nursing assessment.
+                            </div>
+                            <div class="text-center">
+                                <a href="/nurse/assessment/<%= visitId %>"
+                                   class="btn btn-success btn-custom">
+                                    <i class="fas fa-clipboard-list me-2"></i>Start Assessment
+                                </a>
+                            </div>
+                            <% } else { %>
+                            <hr>
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Visit Creation Failed:</strong> There was an error creating a new visit for this patient.
+                                Please try again or contact system administrator.
+                            </div>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <% } %>
+
+        <!-- Current Visits Status -->
+        <% if (currentVisits && currentVisits.length > 0) { %>
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card" role="complementary" aria-label="Current assessments overview">
+                        <div class="card-header bg-primary text-white">
+                            <h3 class="card-title mb-0">
+                                <i class="fas fa-clipboard-list me-2"></i>Your Current Assessments
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th><i class="fas fa-calendar me-1"></i>Visit Date</th>
+                                            <th><i class="fas fa-user me-1"></i>Patient</th>
+                                            <th><i class="fas fa-id-card me-1"></i>Medical #</th>
+                                            <th><i class="fas fa-stethoscope me-1"></i>Diagnosis</th>
+                                            <th><i class="fas fa-tasks me-1"></i>Status</th>
+                                            <th><i class="fas fa-cogs me-1"></i>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% currentVisits.forEach(visit => { %>
+                                            <tr>
+                                                <td>
+                                                    <div>
+                                                        <strong><%= new Date(visit.visit_date).toLocaleDateString() %></strong>
+                                                        <br>
+                                                        <small class="text-muted"><%= new Date(visit.visit_date).toLocaleTimeString() %></small>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div>
+                                                        <strong><%= visit.patient_name %></strong>
+                                                        <br>
+                                                        <small class="text-muted">
+                                                            <%= visit.gender %>,
+                                                            <%= visit.calculated_age %> years old
+                                                        </small>
+                                                    </div>
+                                                </td>
+                                                <td><%= visit.medical_number || '-' %></td>
+                                                <td>
+                                                    <% if (visit.primary_diagnosis) { %>
+                                                        <div>
+                                                            <strong><%= visit.primary_diagnosis %></strong>
+                                                            <% if (visit.diagnosis_code) { %>
+                                                                <br><small class="text-muted">Code: <%= visit.diagnosis_code %></small>
+                                                            <% } %>
+                                                        </div>
+                                                    <% } else { %>
+                                                        <span class="text-muted">-</span>
+                                                    <% } %>
+                                                </td>
+                                                <td>
+                                                    <div class="assessment-status">
+                                                        <% if (visit.assessment_id) { %>
+                                                            <% if (visit.is_draft) { %>
+                                                                <span class="badge bg-warning text-dark">
+                                                                    <i class="fas fa-edit me-1"></i>Draft
+                                                                </span>
+                                                            <% } else { %>
+                                                                <span class="badge bg-success">
+                                                                    <i class="fas fa-check-circle me-1"></i>Completed
+                                                                </span>
+                                                            <% } %>
+                                                        <% } else { %>
+                                                            <span class="badge bg-secondary">
+                                                                <i class="fas fa-exclamation-triangle me-1"></i>Not Started
+                                                            </span>
+                                                        <% } %>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="btn-group btn-group-sm" role="group">
+                                                        <% if (visit.assessment_id) { %>
+                                                            <a href="/nurse/assessment/<%= visit.visit_id %>" class="btn btn-outline-primary" title="Continue Assessment">
+                                                                <i class="fas fa-edit"></i> Continue
+                                                            </a>
+                                                        <% } else { %>
+                                                            <a href="/nurse/assessment/<%= visit.visit_id %>" class="btn btn-success" title="Start Assessment">
+                                                                <i class="fas fa-play"></i> Start
+                                                            </a>
+                                                        <% } %>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        <% }); %>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="mt-3 text-center">
+                                <a href="/nurse/my-assessments" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-list me-1"></i>View All Assessments
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <% } %>
+
+        <!-- Instructions -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card" role="complementary" aria-label="Patient search instructions">
+                    <div class="card-body">
+                        <h3 class="card-title">
+                            <i class="fas fa-question-circle me-2"></i>How to Use Patient Search
+                        </h3>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-search text-primary me-2"></i>Search Process</h6>
+                                <ol class="text-muted">
+                                    <li>Enter the patient's 14-digit SSN</li>
+                                    <li>Type at least 2 digits to see matching results</li>
+                                    <li>Select the patient from the dropdown</li>
+                                    <li>Verify both patient name and SSN in the confirmation section</li>
+                                    <li>Click "Confirm Patient Info & Start Assessment" to proceed</li>
+                                    <li>A new visit record is automatically created</li>
+                                    <li>The nursing assessment form will open</li>
+                                </ol>
+                            </div>
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-user-plus text-success me-2"></i>What Happens Next</h6>
+                                <ul class="text-muted">
+                                    <li>New visit is linked to the patient and current nurse</li>
+                                    <li>Assessment form opens with patient context</li>
+                                    <li>Form can be saved as draft or submitted when complete</li>
+                                    <li>All data is securely stored in the database</li>
+                                    <li>Assessment can be resumed from drafts if needed</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h3 class="card-title mb-3">Alternative Actions</h3>
+                        <div class="row justify-content-center">
+                            <div class="col-md-6">
+                                <a href="/" class="btn btn-outline-primary btn-custom w-100">
+                                    <i class="fas fa-home me-2"></i>Back to Home
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let selectedPatient = null;
+        let searchTimeout = null;
+
+        // Patient search input handler
+        document.getElementById('patientSearch').addEventListener('input', function(e) {
+            const query = e.target.value.trim();
+            const resultsDiv = document.getElementById('autocompleteResults');
+            const ssnSection = document.getElementById('ssnSection');
+            const searchBtn = document.getElementById('searchBtn');
+            const clientErrorContainer = document.getElementById('clientErrorContainer');
+
+            // Hide client error message when user starts typing
+            clientErrorContainer.style.display = 'none';
+
+            // Clear previous timeout
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
+            }
+
+            if (query.length < 2) {
+                resultsDiv.style.display = 'none';
+                ssnSection.style.display = 'none';
+                searchBtn.disabled = true;
+                selectedPatient = null;
+                return;
+            }
+
+            // Debounce search
+            searchTimeout = setTimeout(() => {
+                console.log('Searching for SSN:', query);
+                fetch(`/api/patients/search?q=${encodeURIComponent(query)}`)
+                    .then(response => {
+                        console.log('Response status:', response.status);
+                        return response.json();
+                    })
+                    .then(patients => {
+                        console.log('Received patients:', patients);
+                        displayAutocompleteResults(patients, query);
+                    })
+                    .catch(error => {
+                        console.error('Search error:', error);
+                        resultsDiv.style.display = 'none';
+                    });
+            }, 300);
+        });
+
+        // Keyboard navigation for autocomplete
+        document.getElementById('patientSearch').addEventListener('keydown', function(e) {
+            const resultsDiv = document.getElementById('autocompleteResults');
+            const items = resultsDiv.querySelectorAll('.autocomplete-item');
+            let currentIndex = -1;
+
+            // Find currently focused item
+            items.forEach((item, index) => {
+                if (item === document.activeElement) {
+                    currentIndex = index;
+                }
+            });
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (currentIndex < items.length - 1) {
+                    items[currentIndex + 1].focus();
+                } else if (items.length > 0) {
+                    items[0].focus();
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (currentIndex > 0) {
+                    items[currentIndex - 1].focus();
+                } else if (items.length > 0) {
+                    items[items.length - 1].focus();
+                }
+            } else if (e.key === 'Enter' && currentIndex >= 0) {
+                e.preventDefault();
+                items[currentIndex].click();
+            } else if (e.key === 'Escape') {
+                resultsDiv.style.display = 'none';
+                this.focus();
+            }
+        });
+
+        function displayAutocompleteResults(patients, query) {
+            console.log('Displaying results for patients:', patients);
+            const resultsDiv = document.getElementById('autocompleteResults');
+            const ssnSection = document.getElementById('ssnSection');
+            const searchBtn = document.getElementById('searchBtn');
+            const clientErrorContainer = document.getElementById('clientErrorContainer');
+            const clientErrorMessage = document.getElementById('clientErrorMessage');
+
+            if (patients.length === 0) {
+                console.log('No patients found, showing error message');
+                // Hide autocomplete results
+                resultsDiv.style.display = 'none';
+                ssnSection.style.display = 'none';
+                searchBtn.disabled = true;
+
+                // Show error message with Add Patient button
+                clientErrorMessage.innerHTML = `
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Patient not found. No patient matches the entered SSN.
+                    <div class="text-center mt-3">
+                        <a href="/nurse/add-patient?ssn=${encodeURIComponent(query)}" class="btn btn-primary">
+                            <i class="fas fa-user-plus me-2"></i>Add New Patient
+                        </a>
+                    </div>
+                `;
+                clientErrorContainer.style.display = 'block';
+                return;
+            }
+
+            console.log('Generating HTML for', patients.length, 'patients');
+            // Hide error message if patients are found
+            clientErrorContainer.style.display = 'none';
+
+            resultsDiv.innerHTML = patients.map(patient => `
+                <div class="autocomplete-item" onclick="selectPatient('${patient.ssn}', '${patient.full_name}')" tabindex="0" role="option">
+                    <div class="patient-name">${patient.full_name}</div>
+                    <div class="patient-details">
+                        SSN: ${patient.ssn} | Medical #: ${patient.medical_number || 'N/A'}
+                    </div>
+                </div>
+            `).join('');
+
+            resultsDiv.style.display = 'block';
+            ssnSection.style.display = 'none';
+            searchBtn.disabled = true;
+        }
+
+        function selectPatient(ssn, name) {
+            selectedPatient = { ssn, name };
+            document.getElementById('patientSearch').value = ssn;
+            document.getElementById('patientName').value = name;
+            document.getElementById('ssn').value = ssn;
+            document.getElementById('autocompleteResults').style.display = 'none';
+            document.getElementById('ssnSection').style.display = 'block';
+            document.getElementById('searchBtn').disabled = false;
+        }
+
+        // Auto-format SSN search input (allow only digits, limit to 14)
+        document.getElementById('patientSearch').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, ''); // Remove any non-digit characters
+            // Limit to 14 digits
+            if (value.length > 14) {
+                value = value.slice(0, 14);
+            }
+            e.target.value = value;
+        });
+
+        // Auto-format SSN input (allow only digits, limit to 14)
+        document.getElementById('ssn').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, ''); // Remove any non-digit characters
+            // Limit to 14 digits
+            if (value.length > 14) {
+                value = value.slice(0, 14);
+            }
+            e.target.value = value;
+        });
+
+        // Close autocomplete when clicking outside
+        document.addEventListener('click', function(e) {
+            const resultsDiv = document.getElementById('autocompleteResults');
+            const searchInput = document.getElementById('patientSearch');
+
+            if (!resultsDiv.contains(e.target) && e.target !== searchInput) {
+                resultsDiv.style.display = 'none';
+            }
+        });
+
+        // Focus on search input when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('patientSearch').focus();
+        });
+    </script>
+</body>
+</html>

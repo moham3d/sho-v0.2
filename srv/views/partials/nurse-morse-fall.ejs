@@ -1,0 +1,150 @@
+<!-- Morse Fall Scale Assessment -->
+<div class="form-section" id="morseFallScaleSection">
+    <div class="section-title">
+        <h3><i class="fas fa-exclamation-triangle me-2" aria-hidden="true"></i>Morse Fall Scale Assessment</h3>
+        <small>مقياس مورز لخطر السقوط</small>
+    </div>
+    <div class="alert alert-info">
+        <strong>Fall Risk Categories:</strong> 0-10 (Low), 11-20 (Medium), 21-30 (High), 31+ (Very High)
+    </div>
+    <div class="row g-3">
+        <!-- History of Falling -->
+        <div class="col-md-6">
+            <label class="form-label fw-bold">1. History of Falling: تاريخ السقوط</label>
+            <div class="form-check">
+                <input class="form-check-input morse-radio" type="radio" name="morse_history_falling" value="0"
+                    <%=assessment && assessment.morse_history_falling==='0' ? 'checked' : '' %> data-score="0"
+                aria-label="No history of falling">
+                <label class="form-check-label">No (0 points): لا</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input morse-radio" type="radio" name="morse_history_falling" value="25"
+                    <%=assessment && assessment.morse_history_falling==='25' ? 'checked' : '' %> data-score="25"
+                aria-label="Yes history of falling">
+                <label class="form-check-label">Yes (25 points): نعم</label>
+            </div>
+        </div>
+
+        <!-- Secondary Diagnosis -->
+        <div class="col-md-6">
+            <label class="form-label fw-bold">2. Secondary Diagnosis: تشخيص ثانوي</label>
+            <div class="form-check">
+                <input class="form-check-input morse-radio" type="radio" name="morse_secondary_diagnosis" value="0"
+                    <%=assessment && assessment.morse_secondary_diagnosis==='0' ? 'checked' : '' %> data-score="0"
+                aria-label="No secondary diagnosis">
+                <label class="form-check-label">No (0 points): لا</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input morse-radio" type="radio" name="morse_secondary_diagnosis" value="15"
+                    <%=assessment && assessment.morse_secondary_diagnosis==='15' ? 'checked' : '' %> data-score="15"
+                aria-label="Yes secondary diagnosis">
+                <label class="form-check-label">Yes (15 points): نعم</label>
+            </div>
+        </div>
+
+        <!-- Ambulatory Aid -->
+        <div class="col-md-6">
+            <label class="form-label fw-bold">3. Ambulatory Aid: أداة المشي المساعدة</label>
+            <div class="form-check">
+                <input class="form-check-input morse-radio" type="radio" name="morse_ambulatory_aid" value="0"
+                    <%=assessment && assessment.morse_ambulatory_aid==='0' ? 'checked' : '' %> data-score="0"
+                aria-label="No ambulatory aid">
+                <label class="form-check-label">None (0 points): لا شيء</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input morse-radio" type="radio" name="morse_ambulatory_aid" value="15"
+                    <%=assessment && assessment.morse_ambulatory_aid==='15' ? 'checked' : '' %> data-score="15"
+                aria-label="Cane or crutch">
+                <label class="form-check-label">Cane/Crutch (15 points): عصا/عكاز</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input morse-radio" type="radio" name="morse_ambulatory_aid" value="20"
+                    <%=assessment && assessment.morse_ambulatory_aid==='20' ? 'checked' : '' %> data-score="20"
+                aria-label="Walker">
+                <label class="form-check-label">Walker (20 points): مشاية</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input morse-radio" type="radio" name="morse_ambulatory_aid" value="30"
+                    <%=assessment && assessment.morse_ambulatory_aid==='30' ? 'checked' : '' %> data-score="30"
+                aria-label="Furniture for support">
+                <label class="form-check-label">Furniture (30 points): الأثاث</label>
+            </div>
+        </div>
+
+        <!-- IV Therapy -->
+        <div class="col-md-6">
+            <label class="form-label fw-bold">4. IV Therapy: علاج وريدي</label>
+            <div class="form-check">
+                <input class="form-check-input morse-radio" type="radio" name="morse_iv_therapy" value="0" <%=assessment
+                    && assessment.morse_iv_therapy==='0' ? 'checked' : '' %> data-score="0" aria-label="No IV therapy">
+                <label class="form-check-label">No (0 points): لا</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input morse-radio" type="radio" name="morse_iv_therapy" value="20"
+                    <%=assessment && assessment.morse_iv_therapy==='20' ? 'checked' : '' %> data-score="20"
+                aria-label="Yes IV therapy">
+                <label class="form-check-label">Yes (20 points): نعم</label>
+            </div>
+        </div>
+
+        <!-- Gait -->
+        <div class="col-md-6">
+            <label class="form-label fw-bold">5. Gait: المشي</label>
+            <div class="form-check">
+                <input class="form-check-input morse-radio" type="radio" name="morse_gait" value="0" <%=assessment &&
+                    assessment.morse_gait==='0' ? 'checked' : '' %> data-score="0" aria-label="Normal gait">
+                <label class="form-check-label">Normal (0 points): طبيعي</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input morse-radio" type="radio" name="morse_gait" value="10" <%=assessment &&
+                    assessment.morse_gait==='10' ? 'checked' : '' %> data-score="10" aria-label="Weak gait">
+                <label class="form-check-label">Weak (10 points): ضعيف</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input morse-radio" type="radio" name="morse_gait" value="20" <%=assessment &&
+                    assessment.morse_gait==='20' ? 'checked' : '' %> data-score="20" aria-label="Impaired gait">
+                <label class="form-check-label">Impaired (20 points): معاق</label>
+            </div>
+        </div>
+
+        <!-- Mental Status -->
+        <div class="col-md-6">
+            <label class="form-label fw-bold">6. Mental Status: الحالة العقلية</label>
+            <div class="form-check">
+                <input class="form-check-input morse-radio" type="radio" name="morse_mental_status" value="0"
+                    <%=assessment && assessment.morse_mental_status==='0' ? 'checked' : '' %> data-score="0"
+                aria-label="Oriented mental status">
+                <label class="form-check-label">Oriented (0 points): واعي</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input morse-radio" type="radio" name="morse_mental_status" value="15"
+                    <%=assessment && assessment.morse_mental_status==='15' ? 'checked' : '' %> data-score="15"
+                aria-label="Confused or impaired mental status">
+                <label class="form-check-label">Confused/Impaired (15 points): مرتبك/معاق</label>
+            </div>
+        </div>
+
+        <!-- Total Score Display -->
+        <div class="col-12">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Morse Fall Scale Total Score</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h2 class="text-primary" id="morseTotalScore">0</h2>
+                            <p class="mb-0">Total Points</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h4 class="text-warning" id="morseRiskLevel">Low Risk</h4>
+                            <p class="mb-0">Risk Category</p>
+                        </div>
+                    </div>
+                    <input type="hidden" name="morse_total_score" id="morseTotalScoreInput"
+                        value="<%= assessment ? assessment.morse_total_score : 0 %>">
+                    <input type="hidden" name="morse_risk_level" id="morseRiskLevelInput"
+                        value="<%= assessment ? assessment.morse_risk_level : 'Low Risk' %>">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

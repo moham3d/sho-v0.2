@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visit Report - <%= visit.visit_id %> (Compact)</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        @media print {
+            body { margin: 0; padding: 10mm; font-size: 9pt; line-height: 1.2; }
+            .no-print { display: none !important; }
+            .page-break { page-break-after: always; }
+            h1, h2, h3, h4, h5, h6 { page-break-after: avoid; }
+            table, figure { page-break-inside: avoid; }
+        }
+        
+        body { font-family: Arial, sans-serif; font-size: 9pt; }
+        .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 5px; margin-bottom: 10px; }
+        .header h1 { font-size: 14pt; margin: 0; font-weight: bold; }
+        .header h2 { font-size: 11pt; margin: 0; color: #555; }
+        .section { margin-bottom: 8px; }
+        .section-title { background: #f0f0f0; padding: 3px 6px; font-weight: bold; font-size: 10pt; border-left: 3px solid #007bff; margin: 5px 0; }
+        .info-row { display: flex; flex-wrap: wrap; margin: 2px 0; }
+        .info-item { flex: 0 0 50%; padding: 1px 5px; }
+        .info-label { font-weight: bold; display: inline-block; width: 120px; }
+        .vital-signs { background: #f8f9fa; padding: 5px; border-radius: 3px; margin: 3px 0; }
+        .vital-inline { display: inline-block; margin-right: 15px; }
+        .signature-box { border: 1px solid #ddd; padding: 5px; margin: 5px 0; text-align: left; max-height: 50px; }
+        .footer { text-align: center; font-size: 8pt; color: #666; margin-top: 10px; border-top: 1px solid #ccc; padding-top: 5px; }
+    </style>
+</head>
+<body>
+    <!-- Print Button -->
+    <div class="no-print" style="position: fixed; top: 10px; right: 10px; z-index: 1000;">
+        <button onclick="window.print()" class="btn btn-primary btn-sm">
+            <i class="fas fa-print"></i> Print
+        </button>
+        <button onclick="window.close()" class="btn btn-secondary btn-sm">
+            <i class="fas fa-times"></i> Close
+        </button>
+    </div>
+
+    <!-- Header -->
+    <div class="header">
+        <h1>Al-Shorouk Radiology Management System</h1>
+        <h2>Patient Visit Report (Compact)</h2>
+        <div style="font-size: 9pt; margin-top: 5px;">
+            Visit ID: <%= visit.visit_id %> | Date: <%= new Date(visit.visit_date).toLocaleString() %> | 
+            Status: <%= visit.visit_status %> | Generated: <%= new Date().toLocaleString() %>
+        </div>
+    </div>
+
+    <!-- Patient & Visit Info -->
+    <div class="section">
+        <div class="section-title">PATIENT & VISIT INFORMATION</div>
+        <div class="info-row">
+            <div class="info-item">
+                <span class="info-label">Name:</span> <%= visit.full_name %>
+            </div>
+            <div class="info-item">
+                <span class="info-label">SSN:</span> <%= visit.patient_ssn %>
+            </div>
+        </div>
+        <div class="info-row">
+            <div class="info-item">
+                <span class="info-label">DOB:</span> <%= new Date(visit.date_of_birth).toLocaleDateString() %> 
+                (<%= Math.floor((new Date() - new Date(visit.date_of_birth)) / (365.25 * 24 * 60 * 60 * 1000)) %> yrs)
+            </div>
+            <div class="info-item">
+                <span class="info-label">Gender:</span> <%= visit.gender %> | 
+                <span class="info-label">Medical#:</span> <%= visit.medical_number %>
+            </div>
+        </div>
+        <div class="info-row">
+            <div class="info-item">
+                <span class="info-label">Mobile:</span> <%= visit.mobile_number %>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Dept:</span> <%= visit.department %> | 
+                <span class="info-label">Type:</span> <%= visit.visit_type %>
+            </div>
+        </div>
+        <% if (visit.primary_diagnosis) { %>
+        <div class="info-row">
+            <div class="info-item" style="flex: 0 0 100%;">
+                <span class="info-label">Diagnosis:</span> <%= visit.primary_diagnosis %>
+            </div>
+        </div>
+        <% } %>
+    </div>
+
+    <!-- Nursing Assessment (Compact) -->
+    <% if (nursingAssessment) { %>
+    <div class="section">
+        <div class="section-title">NURSING ASSESSMENT (SH.MR.FRM.05)</div>
+        
+        <!-- Vital Signs - Single Line -->
+        <div class="vital-signs">
+            <strong>Vitals:</strong>
+            <span class="vital-inline">T: <%= nursingAssessment.temperature_celsius || 'N/A' %>°C</span>
+            <span class="vital-inline">P: <%= nursingAssessment.pulse_bpm || 'N/A' %> bpm</span>
+            <span class="vital-inline">BP: <%= nursingAssessment.blood_pressure_systolic || 'N/A' %>/<%= nursingAssessment.blood_pressure_diastolic || 'N/A' %> mmHg</span>
+            <span class="vital-inline">RR: <%= nursingAssessment.respiratory_rate_per_min || 'N/A' %>/min</span>
+            <span class="vital-inline">SpO2: <%= nursingAssessment.oxygen_saturation_percent || 'N/A' %>%</span>
+            <span class="vital-inline">BSL: <%= nursingAssessment.blood_sugar_mg_dl || 'N/A' %> mg/dL</span>
+            <span class="vital-inline">Wt: <%= nursingAssessment.weight_kg || 'N/A' %> kg</span>
+            <span class="vital-inline">Ht: <%= nursingAssessment.height_cm || 'N/A' %> cm</span>
+        </div>
+
+        <div class="info-row">
+            <div class="info-item">
+                <span class="info-label">Chief Complaint:</span> <%= nursingAssessment.chief_complaint || 'N/A' %>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Arrival:</span> <%= nursingAssessment.mode_of_arrival || 'N/A' %>
+            </div>
+        </div>
+        
+        <div class="info-row">
+            <div class="info-item">
+                <span class="info-label">General:</span> <%= nursingAssessment.general_condition || 'N/A' %>, 
+                <%= nursingAssessment.consciousness_level || 'N/A' %>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Skin:</span> <%= nursingAssessment.skin_condition || 'Normal' %> | 
+                <span class="info-label">Mobility:</span> <%= nursingAssessment.mobility_status || 'Good' %>
+            </div>
+        </div>
+
+        <div class="info-row">
+            <div class="info-item">
+                <span class="info-label">Fall Risk:</span> Score <%= nursingAssessment.morse_total_score || 'N/A' %> 
+                (<%= nursingAssessment.morse_risk_level || 'N/A' %>)
+            </div>
+            <div class="info-item">
+                <span class="info-label">Allergies:</span> <%= nursingAssessment.has_allergies ? 'Yes' : 'None' %>
+                <% if (nursingAssessment.medication_allergies) { %> - <%= nursingAssessment.medication_allergies %><% } %>
+            </div>
+        </div>
+
+        <div class="info-row">
+            <div class="info-item">
+                <span class="info-label">Diet:</span> <%= nursingAssessment.diet_type || 'Regular' %> | 
+                <span class="info-label">Appetite:</span> <%= nursingAssessment.appetite || 'Good' %>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Functional:</span> 
+                <%= nursingAssessment.feeding_status || 'Independent' %> / 
+                <%= nursingAssessment.ambulation_status || 'Normal' %>
+            </div>
+        </div>
+
+        <% if (nursingAssessment.pain_intensity) { %>
+        <div class="info-row">
+            <div class="info-item" style="flex: 0 0 100%;">
+                <span class="info-label">Pain:</span> <%= nursingAssessment.pain_intensity %>/10, 
+                <%= nursingAssessment.pain_location || 'N/A' %>, 
+                <%= nursingAssessment.pain_character || 'N/A' %>
+            </div>
+        </div>
+        <% } %>
+
+        <div class="info-row">
+            <div class="info-item" style="flex: 0 0 100%;">
+                <span class="info-label">Education:</span>
+                <% if (nursingAssessment.needs_medication_education) { %>Medication, <% } %>
+                <% if (nursingAssessment.needs_fall_prevention_education) { %>Fall Prevention, <% } %>
+                <% if (nursingAssessment.needs_diet_nutrition_education) { %>Nutrition, <% } %>
+                <% if (!nursingAssessment.needs_medication_education && !nursingAssessment.needs_fall_prevention_education && !nursingAssessment.needs_diet_nutrition_education) { %>None required<% } %>
+            </div>
+        </div>
+
+        <div class="info-row">
+            <div class="info-item">
+                <span class="info-label">Assessed by:</span> <%= nursingAssessment.assessed_by_name || 'Unknown' %>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Date:</span> <%= nursingAssessment.assessed_at ? new Date(nursingAssessment.assessed_at).toLocaleString() : 'N/A' %>
+            </div>
+        </div>
+
+        <% if (nursingAssessment.nurse_signature) { %>
+        <div class="signature-box">
+            <% if (nursingAssessment.nurse_signature.startsWith('data:image/svg+xml;base64,')) { %>
+                <%- Buffer.from(nursingAssessment.nurse_signature.replace('data:image/svg+xml;base64,', ''), 'base64').toString('utf8').replace('<svg', '<svg style="max-height: 35px; max-width: 200px;"') %>
+            <% } else if (nursingAssessment.nurse_signature.startsWith('data:image/svg+xml,')) { %>
+                <%- nursingAssessment.nurse_signature.replace('data:image/svg+xml,', '').replace('<svg', '<svg style="max-height: 35px; max-width: 200px;"') %>
+            <% } else { %>
+                <img src="<%= nursingAssessment.nurse_signature %>" alt="Nurse Signature" style="max-height: 35px; max-width: 200px;">
+            <% } %>
+        </div>
+        <% } %>
+    </div>
+    <% } else { %>
+    <div class="section">
+        <div class="section-title">NURSING ASSESSMENT (SH.MR.FRM.05)</div>
+        <div style="padding: 10px; text-align: center; color: #666; font-style: italic;">
+            Nursing assessment not yet completed
+        </div>
+    </div>
+    <% } %>
+
+    <!-- Separator -->
+    <div style="border-top: 2px dashed #ccc; margin: 10px 0;"></div>
+
+    <!-- Radiology Assessment (Compact) -->
+    <% if (radiologyAssessment) { %>
+    <div class="section">
+        <div class="section-title">
+            <% if (radiologyAssessment.form_source === 'pet_ct') { %>
+                PET CT REPORT (SH.MR.FRM.06)
+            <% } else { %>
+                RADIOLOGY EXAMINATION FORM (SH.MR.FRM.03)
+            <% } %>
+        </div>
+        
+        <div class="info-row">
+            <div class="info-item">
+                <span class="info-label">Form Type:</span> <%= (radiologyAssessment.form_source === 'pet_ct') ? 'PET-CT' : (radiologyAssessment.form_type ? radiologyAssessment.form_type.toUpperCase() : 'N/A') %>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Exam Date:</span> <%= radiologyAssessment.examination_date ? new Date(radiologyAssessment.examination_date).toLocaleDateString() : (radiologyAssessment.exam_date ? new Date(radiologyAssessment.exam_date).toLocaleDateString() : 'N/A') %>
+            </div>
+        </div>
+
+        <div class="info-row">
+            <div class="info-item">
+                <span class="info-label">Created by:</span> <%= radiologyAssessment.assessed_by_name || radiologyAssessment.created_by || 'N/A' %>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Date:</span> <%= radiologyAssessment.created_at ? new Date(radiologyAssessment.created_at).toLocaleString() : (radiologyAssessment.created_at ? new Date(radiologyAssessment.created_at).toLocaleString() : 'N/A') %>
+            </div>
+        </div>
+
+        <% if (radiologyAssessment.form_source === 'pet_ct') { %>
+            <div class="section-title" style="font-size: 9pt; margin-top: 8px;">PET CT DETAILS</div>
+            <div class="info-row">
+                <div class="info-item">
+                    <span class="info-label">Tumor Location:</span> <%= radiologyAssessment.tumor_location || 'N/A' %>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Tumor Type:</span> <%= radiologyAssessment.tumor_type || 'N/A' %>
+                </div>
+            </div>
+            <div class="info-row">
+                <div class="info-item" style="flex: 0 0 100%;">
+                    <span class="info-label">Reason for Study:</span> <%= radiologyAssessment.reason_for_study || 'N/A' %>
+                </div>
+            </div>
+        <% } %>
+
+        <% if (radiologyAssessment.ctd1vol || radiologyAssessment.dlp || radiologyAssessment.kv || radiologyAssessment.mas) { %>
+        <div class="vital-signs">
+            <strong>Technical Parameters:</strong>
+            <% if (radiologyAssessment.ctd1vol) { %><span class="vital-inline">CTDIvol: <%= radiologyAssessment.ctd1vol %></span><% } %>
+            <% if (radiologyAssessment.dlp) { %><span class="vital-inline">DLP: <%= radiologyAssessment.dlp %></span><% } %>
+            <% if (radiologyAssessment.kv) { %><span class="vital-inline">kV: <%= radiologyAssessment.kv %></span><% } %>
+            <% if (radiologyAssessment.mas) { %><span class="vital-inline">mAs: <%= radiologyAssessment.mas %></span><% } %>
+        </div>
+        <% } %>
+
+        <div class="info-row">
+            <div class="info-item" style="flex: 0 0 100%;">
+                <span class="info-label">Clinical Indication:</span> <%= radiologyAssessment.patient_complaint || radiologyAssessment.reason_details || 'N/A' %>
+            </div>
+        </div>
+
+        <div class="section-title" style="font-size: 9pt; margin-top: 8px;">MEDICAL HISTORY</div>
+        
+        <div class="info-row">
+            <div class="info-item">
+                <span class="info-label">Chronic Diseases:</span> <%= radiologyAssessment.has_chronic_disease ? 'Yes' : 'No' %>
+                <% if (radiologyAssessment.chronic_disease_details) { %> - <%= radiologyAssessment.chronic_disease_details %><% } %>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Allergies:</span> <%= radiologyAssessment.has_allergy ? 'Yes' : 'No' %>
+            </div>
+        </div>
+
+        <% if (radiologyAssessment.allergy_medication_details || radiologyAssessment.allergy_food_details || radiologyAssessment.allergy_others_details) { %>
+        <div class="info-row">
+            <div class="info-item" style="flex: 0 0 100%;">
+                <span class="info-label">Allergy Details:</span>
+                <% if (radiologyAssessment.allergy_medication_details) { %>Medication: <%= radiologyAssessment.allergy_medication_details %>; <% } %>
+                <% if (radiologyAssessment.allergy_food_details) { %>Food: <%= radiologyAssessment.allergy_food_details %>; <% } %>
+                <% if (radiologyAssessment.allergy_others_details) { %>Other: <%= radiologyAssessment.allergy_others_details %><% } %>
+            </div>
+        </div>
+        <% } %>
+
+        <% if (radiologyAssessment.current_medications) { %>
+        <div class="info-row">
+            <div class="info-item" style="flex: 0 0 100%;">
+                <span class="info-label">Current Medications:</span> <%= radiologyAssessment.current_medications %>
+            </div>
+        </div>
+        <% } %>
+
+        <div class="info-row">
+            <div class="info-item">
+                <span class="info-label">Previous Operations:</span> <%= radiologyAssessment.has_previous_operations ? 'Yes' : 'No' %>
+                <% if (radiologyAssessment.operation_details) { %> - <%= radiologyAssessment.operation_details %><% } %>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Tumor History:</span> <%= radiologyAssessment.has_tumor_history ? 'Yes' : 'No' %>
+                <% if (radiologyAssessment.tumor_location) { %> - <%= radiologyAssessment.tumor_location %><% } %>
+            </div>
+        </div>
+
+        <div class="info-row">
+            <div class="info-item">
+                <span class="info-label">Pregnancy:</span> <%= radiologyAssessment.is_pregnant ? 'Yes' : 'No' %>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Lactation:</span> <%= radiologyAssessment.is_lactating ? 'Yes' : 'No' %>
+            </div>
+        </div>
+
+        <div class="info-row">
+            <div class="info-item">
+                <span class="info-label">Pacemaker:</span> <%= radiologyAssessment.has_pacemaker ? 'Yes' : 'No' %>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Surgical Implants:</span> <%= radiologyAssessment.has_surgical_implants ? 'Yes' : 'No' %>
+                <% if (radiologyAssessment.surgical_implant_details) { %> - <%= radiologyAssessment.surgical_implant_details %><% } %>
+            </div>
+        </div>
+
+        <% if (radiologyAssessment.has_gypsum_splint) { %>
+        <div class="info-row">
+            <div class="info-item" style="flex: 0 0 100%;">
+                <span class="info-label">Gypsum Splint:</span> Yes
+                <% if (radiologyAssessment.gypsum_splint_details) { %> - <%= radiologyAssessment.gypsum_splint_details %><% } %>
+            </div>
+        </div>
+        <% } %>
+
+        <% if (radiologyAssessment.has_critical_result) { %>
+        <div class="section-title" style="font-size: 9pt; margin-top: 8px; background: #fff3cd; border-left-color: #dc3545;">CRITICAL RESULTS</div>
+        <div style="margin: 5px 0; padding: 5px; background: #fff3cd; border-left: 2px solid #dc3545;">
+            <%= radiologyAssessment.critical_result_details || 'Critical result noted' %>
+            <% if (radiologyAssessment.critical_result_notified) { %>
+                <br><strong>Notified to:</strong> <%= radiologyAssessment.critical_result_notified_to %>
+            <% } %>
+        </div>
+        <% } %>
+
+        <% if (radiologyAssessment.additional_notes || radiologyAssessment.radiologist_notes) { %>
+        <div class="section-title" style="font-size: 9pt;">NOTES</div>
+        <div style="margin: 5px 0; padding: 5px; background: #f8f9fa; border-left: 2px solid #6c757d;">
+            <% if (radiologyAssessment.radiologist_notes) { %>
+                <strong>Radiologist:</strong> <%= radiologyAssessment.radiologist_notes %><br>
+            <% } %>
+            <% if (radiologyAssessment.additional_notes) { %>
+                <strong>Additional:</strong> <%= radiologyAssessment.additional_notes %>
+            <% } %>
+        </div>
+        <% } %>
+
+        <div class="info-row">
+            <div class="info-item">
+                <span class="info-label">Status:</span> <%= radiologyAssessment.form_status || 'draft' %>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Version:</span> <%= radiologyAssessment.version || 1 %>
+            </div>
+        </div>
+
+        <% if ((radiologyAssessment.radiologist_signature || radiologyAssessment.radiologist_signature_id) || radiologyAssessment.patient_signature) { %>
+        <div class="info-row">
+            <div class="info-item" style="flex: 0 0 50%;">
+            <% if (radiologyAssessment.radiologist_signature || radiologyAssessment.radiologist_signature_id) { %>
+            <div class="signature-box">
+                <% if (radiologyAssessment.radiologist_signature) { %>
+                <% if (radiologyAssessment.radiologist_signature.startsWith('data:image/svg+xml;base64,')) { %>
+                    <%- Buffer.from(radiologyAssessment.radiologist_signature.replace('data:image/svg+xml;base64,', ''), 'base64').toString('utf8').replace('<svg', '<svg style="max-height: 35px; max-width: 200px;"') %>
+                <% } else if (radiologyAssessment.radiologist_signature.startsWith('data:image/svg+xml,')) { %>
+                    <%- radiologyAssessment.radiologist_signature.replace('data:image/svg+xml,', '').replace('<svg', '<svg style="max-height: 35px; max-width: 200px;"') %>
+                <% } else { %>
+                    <img src="<%= radiologyAssessment.radiologist_signature %>" alt="Radiologist Signature" style="max-height: 35px; max-width: 200px;">
+                <% } %>
+                <% } %>
+                <div style="font-size: 8pt; margin-top: 2px;"><%= radiologyAssessment.assessed_by_name || 'Radiologist' %></div>
+            </div>
+            <% } %>
+            </div>
+            <div class="info-item" style="flex: 0 0 50%;">
+            <% if (radiologyAssessment.patient_signature) { %>
+            <div class="signature-box">
+                <% if (radiologyAssessment.patient_signature.startsWith && radiologyAssessment.patient_signature.startsWith('data:image/svg+xml;base64,')) { %>
+                <%- Buffer.from(radiologyAssessment.patient_signature.replace('data:image/svg+xml;base64,', ''), 'base64').toString('utf8').replace('<svg', '<svg style="max-height: 35px; max-width: 200px;"') %>
+                <% } else if (radiologyAssessment.patient_signature && radiologyAssessment.patient_signature.startsWith && radiologyAssessment.patient_signature.startsWith('data:image/svg+xml,')) { %>
+                <%- radiologyAssessment.patient_signature.replace('data:image/svg+xml,', '').replace('<svg', '<svg style="max-height: 35px; max-width: 200px;"') %>
+                <% } else if (radiologyAssessment.patient_signature) { %>
+                <img src="<%= radiologyAssessment.patient_signature %>" alt="Patient Signature" style="max-height: 35px; max-width: 200px;">
+                <% } %>
+                <div style="font-size: 8pt; margin-top: 2px;">Patient Signature</div>
+            </div>
+            <% } %>
+            </div>
+        </div>
+        <% } %>
+
+    </div>
+    <% } else { %>
+    <div class="section">
+        <div class="section-title">RADIOLOGY ASSESSMENT (SH.MR.FRM.04)</div>
+        <div style="padding: 10px; text-align: center; color: #666; font-style: italic;">
+            Radiology assessment not yet completed
+        </div>
+    </div>
+    <% } %>
+
+    <!-- Footer -->
+    <div class="footer">
+        Al-Shorouk Radiology Management System | Visit ID: <%= visit.visit_id %> | Patient: <%= visit.full_name %> | 
+        Generated: <%= new Date().toLocaleString() %>
+    </div>
+</body>
+</html>

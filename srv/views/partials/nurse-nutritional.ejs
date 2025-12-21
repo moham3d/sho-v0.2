@@ -1,0 +1,53 @@
+<!-- Nutritional Screening -->
+<div class="form-section">
+    <h3><i class="fas fa-utensils me-2" aria-hidden="true"></i>Nutritional Screening: تقييم التغذية</h3>
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label">Diet Type: نوع الحمية</label>
+            <select class="form-select" name="diet_type" aria-label="Patient's prescribed diet type">
+                <option value="regular" <%=(!assessment || assessment.diet_type==='regular' ) ? 'selected' : '' %>
+                    >Regular: عادي</option>
+                <option value="special" <%=assessment && assessment.diet_type==='special' ? 'selected' : '' %>>Special:
+                    خاص</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Appetite: الشهية</label>
+            <select class="form-select" name="appetite" aria-label="Patient's current appetite level">
+                <option value="good" <%=assessment && assessment.appetite==='good' ? 'selected' : '' %>>Good: جيد
+                </option>
+                <option value="poor" <%=assessment && assessment.appetite==='poor' ? 'selected' : '' %>>Poor: ضعيف
+                </option>
+            </select>
+        </div>
+        <div class="col-12">
+            <label class="form-label">Nutritional Issues: مشاكل التغذية</label>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="has_git_problems" <%=assessment &&
+                            assessment.has_git_problems ? 'checked' : '' %> aria-label="Patient has gastrointestinal
+                        problems">
+                        <label class="form-check-label">GI Problems: مشاكل الجهاز الهضمي</label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="has_weight_loss" <%=assessment &&
+                            assessment.has_weight_loss ? 'checked' : '' %> aria-label="Patient has experienced weight
+                        loss">
+                        <label class="form-check-label">Weight Loss: فقدان الوزن</label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="has_weight_gain" <%=assessment &&
+                            assessment.has_weight_gain ? 'checked' : '' %> aria-label="Patient has experienced weight
+                        gain">
+                        <label class="form-check-label">Weight Gain: زيادة الوزن</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

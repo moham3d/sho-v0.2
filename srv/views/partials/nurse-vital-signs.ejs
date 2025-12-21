@@ -1,0 +1,54 @@
+<!-- Vital Signs -->
+<div class="form-section">
+    <div class="section-title">
+        <h3><i class="fas fa-heartbeat me-2" aria-hidden="true"></i>Vital Signs</h3>
+        <small>العلامات الحيوية</small>
+    </div>
+    <div class="vital-signs-grid">
+        <div>
+            <label class="form-label">Temperature (°C): درجة الحرارة</label>
+            <input type="number" class="form-control" name="temperature_celsius" step="0.1" min="30" max="45" value="<%= assessment ? assessment.temperature_celsius : '' %>" aria-label="Body temperature in Celsius">
+            <div id="temperature_celsius_error" class="invalid-feedback" style="display: none;"></div>
+        </div>
+        <div>
+            <label class="form-label">Pulse (BPM): النبض</label>
+            <input type="number" class="form-control" name="pulse_bpm" min="30" max="200" value="<%= assessment ? assessment.pulse_bpm : '' %>" aria-label="Heart rate in beats per minute">
+            <div id="pulse_bpm_error" class="invalid-feedback" style="display: none;"></div>
+        </div>
+        <div>
+            <label class="form-label">Blood Pressure (Systolic): ضغط الدم (الانقباضي)</label>
+            <input type="number" class="form-control" name="blood_pressure_systolic" min="70" max="250" value="<%= assessment ? assessment.blood_pressure_systolic : '' %>" aria-label="Systolic blood pressure in mmHg">
+            <div id="blood_pressure_systolic_error" class="invalid-feedback" style="display: none;"></div>
+        </div>
+        <div>
+            <label class="form-label">Blood Pressure (Diastolic): ضغط الدم (الانبساطي)</label>
+            <input type="number" class="form-control" name="blood_pressure_diastolic" min="40" max="150" value="<%= assessment ? assessment.blood_pressure_diastolic : '' %>" aria-label="Diastolic blood pressure in mmHg">
+            <div id="blood_pressure_diastolic_error" class="invalid-feedback" style="display: none;"></div>
+        </div>
+        <div>
+            <label class="form-label">Respiratory Rate: معدل التنفس</label>
+            <input type="number" class="form-control" name="respiratory_rate_per_min" min="5" max="60" value="<%= assessment ? assessment.respiratory_rate_per_min : '' %>" aria-label="Respiratory rate in breaths per minute">
+            <div id="respiratory_rate_per_min_error" class="invalid-feedback" style="display: none;"></div>
+        </div>
+        <div>
+            <label class="form-label">Oxygen Saturation (%): تشبع الأكسجين</label>
+            <input type="number" class="form-control" name="oxygen_saturation_percent" step="0.1" min="70" max="100" value="<%= assessment ? assessment.oxygen_saturation_percent : '' %>" aria-label="Blood oxygen saturation percentage">
+            <div id="oxygen_saturation_percent_error" class="invalid-feedback" style="display: none;"></div>
+        </div>
+        <div>
+            <label class="form-label">Blood Sugar (mg/dL): سكر الدم</label>
+            <input type="number" class="form-control" name="blood_sugar_mg_dl" min="20" value="<%= assessment ? assessment.blood_sugar_mg_dl : '' %>" aria-label="Blood glucose level in mg/dL">
+            <div id="blood_sugar_mg_dl_error" class="invalid-feedback" style="display: none;"></div>
+        </div>
+        <div>
+            <label class="form-label">Weight (kg): الوزن</label>
+            <input type="number" class="form-control" name="weight_kg" step="0.1" min="0.5" max="300" value="<%= assessment ? assessment.weight_kg : '' %>" aria-label="Patient weight in kilograms">
+            <div id="weight_kg_error" class="invalid-feedback" style="display: none;"></div>
+        </div>
+        <div>
+            <label class="form-label">Height (cm): الطول</label>
+            <input type="number" class="form-control" name="height_cm" step="0.1" min="20" max="250" value="<%= assessment ? assessment.height_cm : '' %>" aria-label="Patient height in centimeters">
+            <div id="height_cm_error" class="invalid-feedback" style="display: none;"></div>
+        </div>
+    </div>
+</div>

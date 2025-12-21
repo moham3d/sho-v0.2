@@ -1,0 +1,120 @@
+/* 
+   Al-Shorouk Design System - 'Clinical Glass' 
+   v1.0.0
+*/
+
+:root {
+    /* --- Color Palette (HSL) --- */
+    
+    /* Primary Brand: Clear Sky Blue (Trust, Hygiene) */
+    --color-primary-h: 199;
+    --color-primary-s: 89%;
+    --color-primary-l: 48%;
+    --color-primary: hsl(var(--color-primary-h), var(--color-primary-s), var(--color-primary-l));
+    
+    /* Secondary Brand: Royal Indigo (Depth, Action) */
+    --color-secondary-h: 244;
+    --color-secondary-s: 75%;
+    --color-secondary-l: 60%;
+    --color-secondary: hsl(var(--color-secondary-h), var(--color-secondary-s), var(--color-secondary-l));
+
+    /* Surface Colors (Glassmorphism) */
+    --glass-surface: hsla(0, 0%, 100%, 0.7);
+    --glass-border: hsla(0, 0%, 100%, 0.4);
+    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+
+    /* Backgrounds */
+    --bg-app: #f0f4f8; /* Soft blue-grey */
+    --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    
+    /* Text */
+    --text-main: hsl(215, 28%, 17%);
+    --text-muted: hsl(217, 19%, 45%);
+
+    /* --- Typography --- */
+    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+    
+    /* --- Spacing & Radius --- */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 20px;
+    --radius-xl: 32px;
+}
+
+/* Base Reset & Typography */
+body {
+    font-family: var(--font-sans);
+    color: var(--text-main);
+    background: var(--bg-app);
+    background-image: 
+        radial-gradient(at 0% 0%, hsla(253,16%,7%,0) 0, transparent 50%), 
+        radial-gradient(at 50% 0%, hsla(225,39%,30%,0) 0, transparent 50%), 
+        radial-gradient(at 100% 0%, hsla(339,49%,30%,0) 0, transparent 50%);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Glassmorphism Utilities */
+.glass-panel {
+    background: var(--glass-surface);
+    backdrop-filter: blur( 12px );
+    -webkit-backdrop-filter: blur( 12px );
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: var(--radius-md);
+}
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: var(--radius-md);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.glass-card:hover {
+    transform: translateY(-4px);
+    background: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* Button Upgrades */
+.btn-glass {
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    padding: 0.6rem 1.5rem;
+    border-radius: var(--radius-lg);
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    box-shadow: 0 4px 15px hsla(var(--color-primary-h), var(--color-primary-s), var(--color-primary-l), 0.4);
+    transition: all 0.2s ease;
+}
+
+.btn-glass:hover {
+    background: hsl(var(--color-primary-h), var(--color-primary-s), 40%);
+    transform: scale(1.02);
+    box-shadow: 0 6px 20px hsla(var(--color-primary-h), var(--color-primary-s), var(--color-primary-l), 0.6);
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+}
+
+/* Utility Overrides for Bootstrap to match Theme */
+.card {
+    border: none;
+    border-radius: var(--radius-md);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    letter-spacing: -0.02em;
+}

@@ -1,0 +1,348 @@
+/**
+ * Accessibility Utilities
+ * Al-Shorouk Radiology Management System
+ * 
+ * This file contains CSS utilities for improving accessibility
+ * including focus styles, screen reader utilities, and high contrast support.
+ */
+
+/* =========================================
+   1. SKIP LINKS
+   ========================================= */
+.skip-link {
+    position: absolute;
+    top: -100px;
+    left: 0;
+    background: var(--bs-primary, #0d6efd);
+    color: #fff;
+    padding: 0.75rem 1.5rem;
+    z-index: 9999;
+    text-decoration: none;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0;
+    transition: top 0.2s ease;
+}
+
+.skip-link:focus {
+    top: 0;
+    outline: 3px solid #ffc107;
+    outline-offset: 2px;
+}
+
+/* =========================================
+   2. FOCUS STYLES
+   ========================================= */
+
+/* Enhanced focus outline for better visibility */
+*:focus {
+    outline: 2px solid var(--bs-primary, #0d6efd);
+    outline-offset: 2px;
+}
+
+/* Remove outline for mouse users, keep for keyboard */
+*:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* Enhanced focus for keyboard users */
+*:focus-visible {
+    outline: 3px solid var(--focus-color, #0d6efd);
+    outline-offset: 3px;
+    box-shadow: 0 0 0 6px rgba(13, 110, 253, 0.25);
+}
+
+/* Button focus states */
+.btn:focus-visible {
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.5);
+}
+
+/* Link focus styles */
+a:focus-visible {
+    outline: 3px solid currentColor;
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
+/* Form input focus */
+.form-control:focus,
+.form-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Checkbox and radio focus */
+.form-check-input:focus {
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* =========================================
+   3. SCREEN READER UTILITIES
+   ========================================= */
+
+/* Visually hidden but accessible to screen readers */
+.sr-only,
+.visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+/* Show on focus (for skip links) */
+.sr-only-focusable:focus,
+.sr-only-focusable:active,
+.visually-hidden-focusable:focus,
+.visually-hidden-focusable:active {
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    padding: inherit !important;
+    margin: inherit !important;
+    overflow: visible !important;
+    clip: auto !important;
+    white-space: normal !important;
+}
+
+/* =========================================
+   4. REDUCED MOTION
+   ========================================= */
+
+/* Respect user's motion preferences */
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    .fade {
+        opacity: 1 !important;
+        transition: none !important;
+    }
+
+    .collapse {
+        transition: none !important;
+    }
+}
+
+/* =========================================
+   5. HIGH CONTRAST MODE
+   ========================================= */
+
+@media (prefers-contrast: more) {
+    body {
+        --bs-body-bg: #ffffff;
+        --bs-body-color: #000000;
+    }
+
+    .btn {
+        border-width: 2px;
+    }
+
+    .card {
+        border: 2px solid #000;
+    }
+
+    .form-control,
+    .form-select {
+        border: 2px solid #000;
+    }
+
+    a {
+        text-decoration: underline;
+    }
+
+    .badge {
+        border: 1px solid currentColor;
+    }
+}
+
+/* =========================================
+   6. KEYBOARD NAVIGATION
+   ========================================= */
+
+/* Make interactive elements obviously clickable */
+[role="button"],
+[role="link"],
+.sortable,
+.clickable {
+    cursor: pointer;
+}
+
+/* Focus ring for table sortable headers */
+th.sortable:focus-visible {
+    outline: 3px solid var(--bs-primary);
+    outline-offset: -3px;
+    background-color: rgba(13, 110, 253, 0.1);
+}
+
+/* Keyboard-accessible tooltip trigger */
+[data-bs-toggle="tooltip"]:focus {
+    outline: 2px solid var(--bs-primary);
+}
+
+/* =========================================
+   7. TOUCH TARGET SIZES
+   ========================================= */
+
+/* Ensure minimum touch target size of 44x44px */
+.btn-sm {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.5rem 0.75rem;
+}
+
+.form-check-input {
+    width: 1.25em;
+    height: 1.25em;
+}
+
+/* Action buttons in tables */
+.btn-group-sm .btn {
+    min-height: 36px;
+    min-width: 36px;
+}
+
+/* =========================================
+   8. TEXT AND READABILITY
+   ========================================= */
+
+/* Ensure readable line height */
+body {
+    line-height: 1.6;
+}
+
+/* Avoid text that's too wide */
+.readable-width {
+    max-width: 70ch;
+}
+
+/* Error messages should be prominent */
+.alert-danger,
+.text-danger,
+.invalid-feedback {
+    font-weight: 500;
+}
+
+/* Ensure sufficient color contrast for muted text */
+.text-muted {
+    color: #555 !important;
+}
+
+/* =========================================
+   9. FORM ACCESSIBILITY
+   ========================================= */
+
+/* Required field indicator */
+.required::after {
+    content: " *";
+    color: var(--bs-danger, #dc3545);
+}
+
+/* Error state styling */
+.is-invalid {
+    border-color: var(--bs-danger, #dc3545) !important;
+}
+
+.is-invalid:focus {
+    border-color: var(--bs-danger, #dc3545) !important;
+    box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25) !important;
+}
+
+/* Success state styling */
+.is-valid {
+    border-color: var(--bs-success, #198754) !important;
+}
+
+/* =========================================
+   10. LOADING STATES
+   ========================================= */
+
+/* Announce loading to screen readers */
+[aria-busy="true"] {
+    cursor: wait;
+}
+
+/* Loading spinner that's visible and announced */
+.loading-indicator {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* =========================================
+   11. MODAL ACCESSIBILITY
+   ========================================= */
+
+/* Keep focus visible within modals */
+.modal.show .btn:focus-visible {
+    box-shadow: 0 0 0 0.25rem rgba(255, 255, 255, 0.5);
+}
+
+/* Modal close button */
+.modal .btn-close:focus-visible {
+    box-shadow: 0 0 0 0.25rem rgba(255, 255, 255, 0.25);
+}
+
+/* =========================================
+   12. TABLE ACCESSIBILITY
+   ========================================= */
+
+/* Scope indicators for table headers */
+th[scope] {
+    font-weight: 600;
+}
+
+/* Alternating row colors for readability */
+.table-striped>tbody>tr:nth-of-type(odd)>* {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Hover state for table rows */
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.08);
+}
+
+/* Current row indicator */
+.table tbody tr[aria-selected="true"] {
+    background-color: rgba(13, 110, 253, 0.15);
+}
+
+/* =========================================
+   13. PRINT ACCESSIBILITY
+   ========================================= */
+
+@media print {
+
+    .skip-link,
+    .sr-only-focusable {
+        display: none !important;
+    }
+
+    a[href]:after {
+        content: " (" attr(href) ")";
+    }
+
+    abbr[title]:after {
+        content: " (" attr(title) ")";
+    }
+}

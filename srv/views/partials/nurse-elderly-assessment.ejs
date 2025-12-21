@@ -1,0 +1,201 @@
+<!-- Elderly Assessment Evaluation -->
+<div class="form-section" id="elderlyAssessmentSection" style="display: none;">
+    <h3><i class="fas fa-user-plus me-2" aria-hidden="true"></i>Elderly Assessment Evaluation: تقييم كبار السن</h3>
+    <div class="alert alert-info">
+        <strong>This assessment is shown for patients 65 years and older.</strong>
+    </div>
+
+    <!-- Cognitive Screening -->
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <h5 class="text-primary border-bottom pb-2"><i class="fas fa-brain me-2"></i>Cognitive Screening: فحص
+                الإدراك</h5>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Orientation: التوجه</label>
+            <div class="form-check">
+                <input class="form-check-input elderly-radio" type="radio" name="elderly_orientation" value="0"
+                    <%=assessment && assessment.elderly_orientation==='0' ? 'checked' : '' %> data-score="0"
+                aria-label="Oriented to time, place, and person">
+                <label class="form-check-label">Oriented (0 points): واعي</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input elderly-radio" type="radio" name="elderly_orientation" value="1"
+                    <%=assessment && assessment.elderly_orientation==='1' ? 'checked' : '' %> data-score="1"
+                aria-label="Disoriented">
+                <label class="form-check-label">Disoriented (1 point): غير واعي</label>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Memory: الذاكرة</label>
+            <div class="form-check">
+                <input class="form-check-input elderly-radio" type="radio" name="elderly_memory" value="0" <%=assessment
+                    && assessment.elderly_memory==='0' ? 'checked' : '' %> data-score="0" aria-label="Intact memory">
+                <label class="form-check-label">Intact (0 points): سليمة</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input elderly-radio" type="radio" name="elderly_memory" value="1" <%=assessment
+                    && assessment.elderly_memory==='1' ? 'checked' : '' %> data-score="1" aria-label="Impaired memory">
+                <label class="form-check-label">Impaired (1 point): ضعيفة</label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Functional Assessment -->
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <h5 class="text-primary border-bottom pb-2"><i class="fas fa-hands me-2"></i>Functional Assessment (ADLs):
+                التقييم الوظيفي</h5>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label fw-bold">Bathing: الاستحمام</label>
+            <select class="form-select elderly-select" name="elderly_bathing" aria-label="Bathing independence level">
+                <option value="0" <%=assessment && assessment.elderly_bathing==='0' ? 'selected' : '' %>
+                    data-score="0">Independent (0 points): مستقل</option>
+                <option value="1" <%=assessment && assessment.elderly_bathing==='1' ? 'selected' : '' %>
+                    data-score="1">Needs Help (1 point): يحتاج مساعدة</option>
+                <option value="2" <%=assessment && assessment.elderly_bathing==='2' ? 'selected' : '' %>
+                    data-score="2">Dependent (2 points): يعتمد كليًا</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label fw-bold">Dressing: اللبس</label>
+            <select class="form-select elderly-select" name="elderly_dressing" aria-label="Dressing independence level">
+                <option value="0" <%=assessment && assessment.elderly_dressing==='0' ? 'selected' : '' %>
+                    data-score="0">Independent (0 points): مستقل</option>
+                <option value="1" <%=assessment && assessment.elderly_dressing==='1' ? 'selected' : '' %>
+                    data-score="1">Needs Help (1 point): يحتاج مساعدة</option>
+                <option value="2" <%=assessment && assessment.elderly_dressing==='2' ? 'selected' : '' %>
+                    data-score="2">Dependent (2 points): يعتمد كليًا</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label fw-bold">Toileting: التبرز</label>
+            <select class="form-select elderly-select" name="elderly_toileting"
+                aria-label="Toileting independence level">
+                <option value="0" <%=assessment && assessment.elderly_toileting==='0' ? 'selected' : '' %>
+                    data-score="0">Independent (0 points): مستقل</option>
+                <option value="1" <%=assessment && assessment.elderly_toileting==='1' ? 'selected' : '' %>
+                    data-score="1">Needs Help (1 point): يحتاج مساعدة</option>
+                <option value="2" <%=assessment && assessment.elderly_toileting==='2' ? 'selected' : '' %>
+                    data-score="2">Dependent (2 points): يعتمد كليًا</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Medication Review -->
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <h5 class="text-primary border-bottom pb-2"><i class="fas fa-pills me-2"></i>Medication Review: مراجعة
+                الأدوية</h5>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Number of Medications: عدد الأدوية</label>
+            <select class="form-select elderly-select" name="elderly_medication_count"
+                aria-label="Number of medications">
+                <option value="0" <%=assessment && assessment.elderly_medication_count==='0' ? 'selected' : '' %>
+                    data-score="0">0-4 medications (0 points): 0-4 أدوية</option>
+                <option value="1" <%=assessment && assessment.elderly_medication_count==='1' ? 'selected' : '' %>
+                    data-score="1">5-9 medications (1 point): 5-9 أدوية</option>
+                <option value="2" <%=assessment && assessment.elderly_medication_count==='2' ? 'selected' : '' %>
+                    data-score="2">10+ medications (2 points): 10+ أدوية</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-bold">High-Risk Medications: الأدوية عالية الخطورة</label>
+            <div class="form-check">
+                <input class="form-check-input elderly-checkbox" type="checkbox" name="elderly_high_risk_meds"
+                    <%=assessment && assessment.elderly_high_risk_meds ? 'checked' : '' %> data-score="1"
+                aria-label="Taking high-risk medications">
+                <label class="form-check-label">Taking high-risk medications (1 point): يتناول أدوية عالية
+                    الخطورة</label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Geriatric Syndromes -->
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <h5 class="text-primary border-bottom pb-2"><i class="fas fa-exclamation-triangle me-2"></i>Geriatric
+                Syndromes: متلازمات الشيخوخة</h5>
+        </div>
+        <div class="col-md-4">
+            <div class="form-check">
+                <input class="form-check-input elderly-checkbox" type="checkbox" name="elderly_falls" <%=assessment &&
+                    assessment.elderly_falls ? 'checked' : '' %> data-score="1" aria-label="History of falls">
+                <label class="form-check-label">Recent Falls (1 point): سقوط حديث</label>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-check">
+                <input class="form-check-input elderly-checkbox" type="checkbox" name="elderly_incontinence"
+                    <%=assessment && assessment.elderly_incontinence ? 'checked' : '' %> data-score="1"
+                aria-label="Urinary incontinence">
+                <label class="form-check-label">Incontinence (1 point): سلس البول</label>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-check">
+                <input class="form-check-input elderly-checkbox" type="checkbox" name="elderly_delirium" <%=assessment
+                    && assessment.elderly_delirium ? 'checked' : '' %> data-score="2" aria-label="Delirium">
+                <label class="form-check-label">Delirium (2 points): هلوسة</label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Social Support -->
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <h5 class="text-primary border-bottom pb-2"><i class="fas fa-users me-2"></i>Social Support: الدعم الاجتماعي
+            </h5>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Living Situation: وضع المعيشة</label>
+            <select class="form-select elderly-select" name="elderly_living_situation" aria-label="Living situation">
+                <option value="0" <%=assessment && assessment.elderly_living_situation==='0' ? 'selected' : '' %>
+                    data-score="0">Lives with family/support (0 points): يعيش مع العائلة/الدعم</option>
+                <option value="1" <%=assessment && assessment.elderly_living_situation==='1' ? 'selected' : '' %>
+                    data-score="1">Lives alone (1 point): يعيش وحده</option>
+                <option value="2" <%=assessment && assessment.elderly_living_situation==='2' ? 'selected' : '' %>
+                    data-score="2">Nursing home/institution (2 points): دار رعاية/مؤسسة</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Social Support Available: الدعم الاجتماعي المتاح</label>
+            <select class="form-select elderly-select" name="elderly_social_support"
+                aria-label="Social support availability">
+                <option value="0" <%=assessment && assessment.elderly_social_support==='0' ? 'selected' : '' %>
+                    data-score="0">Strong support system (0 points): نظام دعم قوي</option>
+                <option value="1" <%=assessment && assessment.elderly_social_support==='1' ? 'selected' : '' %>
+                    data-score="1">Limited support (1 point): دعم محدود</option>
+                <option value="2" <%=assessment && assessment.elderly_social_support==='2' ? 'selected' : '' %>
+                    data-score="2">No support system (2 points): لا يوجد نظام دعم</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Total Score Display -->
+    <div class="row g-3">
+        <div class="col-12">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Elderly Assessment Total Score</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h2 class="text-primary" id="elderlyTotalScore">0</h2>
+                            <p class="mb-0">Total Points</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h4 class="text-warning" id="elderlyRiskLevel">Low Risk</h4>
+                            <p class="mb-0">Risk Category</p>
+                        </div>
+                    </div>
+                    <input type="hidden" name="elderly_total_score" id="elderlyTotalScoreInput"
+                        value="<%= assessment ? assessment.elderly_total_score : 0 %>">
+                    <input type="hidden" name="elderly_risk_level" id="elderlyRiskLevelInput"
+                        value="<%= assessment ? assessment.elderly_risk_level : 'Low Risk' %>">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

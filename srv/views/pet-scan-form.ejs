@@ -1,0 +1,847 @@
+<%
+    const patientData = patient || {};
+    const visitData = visit || {};
+    const sessionUser = user || {};
+    const dobValue = patientData.date_of_birth ? new Date(patientData.date_of_birth) : null;
+    const autoAge = dobValue ? Math.max(0, Math.floor((Date.now() - dobValue.getTime()) / (365.25 * 24 * 60 * 60 * 1000))) : '';
+    const formattedDob = dobValue ? dobValue.toISOString().split('T')[0] : '';
+    const todayDate = new Date().toISOString().split('T')[0];
+    const patientGender = patientData.gender || '';
+    const patientMobile = patientData.mobile_number || patientData.phone_number || '';
+    const visitDiagnosis = visitData.primary_diagnosis || '';
+    const radiologistName = sessionUser.fullName || sessionUser.full_name || '';
+%>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PET CT Medical Form - Al-Shorouk Radiology Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="/css/custom.css" rel="stylesheet">
+    <style>
+        /* Page-specific wrapper styles */
+        .form-wrapper {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .dual-language {
+            font-size: 0.875em;
+            color: #6c757d;
+        }
+        .required-badge {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .form-section {
+            margin-bottom: 2rem;
+        }
+        .section-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e9ecef;
+        }
+        .signature-pad {
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            background: white;
+        }
+        .info-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <%- include('navigation', { currentPage: 'pet-scan-form' }) %>
+
+    <main class="container py-4" id="main-content" role="main">
+        <div class="form-wrapper">
+            <header class="mb-4 text-center">
+                <h1 class="fw-bold text-success mb-1">
+                    <i class="fas fa-atom me-2" aria-hidden="true"></i>
+                    PET CT Medical Form
+                    <small class="d-block text-muted">نموذج PET CT الطبي - SH.MR.FRM.06</small>
+                </h1>
+                <p class="text-muted mb-0">Complete the form below to document PET CT examination details and patient medical history.</p>
+            </header>
+
+            <% if (patientData && patientData.full_name) { %>
+            <section class="card shadow-sm info-card mb-4">
+                <div class="card-body">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+                        <div>
+                            <h2 class="h5 fw-bold mb-1"><i class="fas fa-user me-2"></i>Patient Overview <span class="text-muted">بيانات المريض</span></h2>
+                            <p class="mb-0 text-muted">Visit ID: <strong><%= visitData.visit_id || 'N/A' %></strong></p>
+                        </div>
+                        <div class="text-end">
+                            <p class="mb-1"><strong>Radiologist:</strong> <%= radiologistName || '—' %></p>
+                            <p class="text-muted mb-0"><i class="far fa-calendar-alt me-1"></i>Form Date: <%= todayDate %></p>
+                        </div>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="p-3 bg-white border rounded-3 h-100">
+                                <p class="mb-1 text-muted">Patient Name / الاسم</p>
+                                <h3 class="h6 fw-semibold mb-0"><%= patientData.full_name %></h3>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 bg-white border rounded-3 h-100">
+                                <p class="mb-1 text-muted">Medical Number / الرقم الطبي</p>
+                                <h3 class="h6 fw-semibold mb-0"><%= patientData.medical_number || '—' %></h3>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 bg-white border rounded-3 h-100">
+                                <p class="mb-1 text-muted">SSN / الرقم القومي</p>
+                                <h3 class="h6 fw-semibold mb-0"><%= patientData.ssn %></h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <% } %>
+
+            <form id="petScanForm" action="/submit-pet-scan-form" method="POST" novalidate>
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <% if (visitData && visitData.visit_id) { %>
+                    <input type="hidden" name="visit_id" value="<%= visitData.visit_id %>">
+                <% } %>
+                <% if (patientData && patientData.ssn) { %>
+                    <input type="hidden" name="patient_id" value="<%= patientData.ssn %>">
+                <% } %>
+                <input type="hidden" name="form_number" value="SH.MR.FRM.06">
+                <input type="hidden" name="radiologist_signature" id="radiologistSignatureInput">
+                <input type="hidden" name="patient_signature" id="patientSignatureInput">
+                <input type="hidden" name="form_status" value="completed">
+                <div id="radiologistSignatureData" data-signature="<%- userSignature || '' %>" hidden></div>
+
+                <!-- Basic Information -->
+                <section class="form-section">
+                    <div class="section-title">
+                        <h3><i class="fas fa-info-circle me-2"></i>Basic Information <small class="dual-language">المعلومات الأساسية</small></h3>
+                        <span class="text-muted">Section 1</span>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Facility <span class="dual-language">المنشأة</span></label>
+                                    <input type="text" class="form-control" name="facility" placeholder="Enter facility name">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Treating Physician <span class="dual-language">الطبيب المعالج</span></label>
+                                    <input type="text" class="form-control" name="treating_physician" placeholder="Enter physician name">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Phone Number <span class="dual-language">رقم الهاتف</span></label>
+                                    <input type="tel" class="form-control" name="phone_number" value="<%= patientMobile %>" placeholder="Enter phone number">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Exam Date <span class="dual-language">تاريخ الفحص</span> <span class="required-badge">*</span></label>
+                                    <input type="date" class="form-control" name="exam_date" value="<%= todayDate %>" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Patient Vitals and Pre-scan Info -->
+                <section class="form-section">
+                    <div class="section-title">
+                        <h3><i class="fas fa-heartbeat me-2"></i>Patient Vitals & Pre-scan <small class="dual-language">علامات الحيوية ومعلومات ما قبل الفحص</small></h3>
+                        <span class="text-muted">Section 2</span>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">Fasting Hours <span class="dual-language">ساعات الصيام</span></label>
+                                    <input type="number" class="form-control" name="fasting_hours" min="0" placeholder="Hours">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">Diabetic Patient <span class="dual-language">مريض سكري</span></label>
+                                    <select class="form-select" name="diabetic_patient">
+                                        <option value="">Select...</option>
+                                        <option value="Yes">Yes / نعم</option>
+                                        <option value="No">No / لا</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">Blood Sugar Level <span class="dual-language">مستوى السكر في الدم</span></label>
+                                    <input type="number" class="form-control" name="blood_sugar_level" step="0.1" placeholder="mg/dL">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">Weight (kg) <span class="dual-language">الوزن (كجم)</span></label>
+                                    <input type="number" class="form-control" name="weight_kg" step="0.1" placeholder="kg">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Height (cm) <span class="dual-language">الطول (سم)</span></label>
+                                    <input type="number" class="form-control" name="height_cm" step="0.1" placeholder="cm">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Injection Details -->
+                <section class="form-section">
+                    <div class="section-title">
+                        <h3><i class="fas fa-syringe me-2"></i>Injection Details <small class="dual-language">تفاصيل الحقن</small></h3>
+                        <span class="text-muted">Section 3</span>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">Dose <span class="dual-language">الجرعة</span></label>
+                                    <input type="text" class="form-control" name="dose" placeholder="Dose amount">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">Injection Site <span class="dual-language">مكان الحقن</span></label>
+                                    <input type="text" class="form-control" name="injection_site" placeholder="Site">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">Injection Time <span class="dual-language">وقت الحقن</span></label>
+                                    <input type="time" class="form-control" name="injection_time">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">Preparation Time <span class="dual-language">وقت التحضير</span></label>
+                                    <input type="time" class="form-control" name="preparation_time">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- CT Dosimetry -->
+                <section class="form-section">
+                    <div class="section-title">
+                        <h3><i class="fas fa-radiation me-2"></i>CT Dosimetry <small class="dual-language">قياس الجرعة المقطعية</small></h3>
+                        <span class="text-muted">Section 4</span>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">CTDIvol</label>
+                                    <input type="number" class="form-control" name="ctdivol" step="0.01" placeholder="CTDIvol value">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">DLP</label>
+                                    <input type="number" class="form-control" name="dlp" step="0.01" placeholder="DLP value">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Contrast and Kidney Function -->
+                <section class="form-section">
+                    <div class="section-title">
+                        <h3><i class="fas fa-vial me-2"></i>Contrast & Kidney Function <small class="dual-language">الصبغة ووظيفة الكلى</small></h3>
+                        <span class="text-muted">Section 5</span>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Contrast Used <span class="dual-language">استخدام الصبغة</span></label>
+                                    <select class="form-select" name="contrast_used">
+                                        <option value="">Select...</option>
+                                        <option value="Yes">Yes / بالصبغة</option>
+                                        <option value="No">No / بدون صبغة</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Urea <span class="dual-language">اليوريا</span></label>
+                                    <input type="number" class="form-control" name="kidney_function_urea" step="0.1" placeholder="Urea level">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Creatinine <span class="dual-language">الكرياتينين</span></label>
+                                    <input type="number" class="form-control" name="kidney_function_creatinine" step="0.1" placeholder="Creatinine level">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Study Type -->
+                <section class="form-section">
+                    <div class="section-title">
+                        <h3><i class="fas fa-file-medical me-2"></i>Study Type <small class="dual-language">نوع الدراسة</small></h3>
+                        <span class="text-muted">Section 6</span>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">First Time Exam <span class="dual-language">فحص لأول مرة</span></label>
+                                    <select class="form-select" name="first_time_exam">
+                                        <option value="">Select...</option>
+                                        <option value="Yes">Yes / نعم</option>
+                                        <option value="No">No / لا</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Comparison Study <span class="dual-language">دراسة مقارنة</span></label>
+                                    <select class="form-select" name="comparison_study">
+                                        <option value="">Select...</option>
+                                        <option value="Yes">Yes / نعم</option>
+                                        <option value="No">No / لا</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Previous Exam Code <span class="dual-language">رمز الفحص السابق</span></label>
+                                    <input type="text" class="form-control" name="previous_exam_code" placeholder="Exam code">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Comparison Date <span class="dual-language">تاريخ المقارنة</span></label>
+                                    <input type="date" class="form-control" name="comparison_date">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Previous Report <span class="dual-language">التقرير السابق</span></label>
+                                    <textarea class="form-control" name="previous_report" rows="2" placeholder="Previous report details"></textarea>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Previous CD <span class="dual-language">القرص السابق</span></label>
+                                    <input type="text" class="form-control" name="previous_cd" placeholder="CD details">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Medical History Attachments -->
+                <section class="form-section">
+                    <div class="section-title">
+                        <h3><i class="fas fa-paperclip me-2"></i>Medical History Attachments <small class="dual-language">مرفقات التاريخ الطبي</small></h3>
+                        <span class="text-muted">Section 7</span>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="has_ultrasound" value="1" id="has_ultrasound">
+                                        <label class="form-check-label" for="has_ultrasound">
+                                            Ultrasound / الموجات فوق الصوتية
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="has_xray" value="1" id="has_xray">
+                                        <label class="form-check-label" for="has_xray">
+                                            X-Ray / الأشعة السينية
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="has_ct" value="1" id="has_ct">
+                                        <label class="form-check-label" for="has_ct">
+                                            CT / الأشعة المقطعية
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="has_mammography" value="1" id="has_mammography">
+                                        <label class="form-check-label" for="has_mammography">
+                                            Mammography / الماموغرام
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="has_mri" value="1" id="has_mri">
+                                        <label class="form-check-label" for="has_mri">
+                                            MRI / الرنين المغناطيسي
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="has_kidney_scan_dtpa" value="1" id="has_kidney_scan_dtpa">
+                                        <label class="form-check-label" for="has_kidney_scan_dtpa">
+                                            Kidney Scan DTPA / مسح الكلى
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="has_bone_scan_mdp" value="1" id="has_bone_scan_mdp">
+                                        <label class="form-check-label" for="has_bone_scan_mdp">
+                                            Bone Scan MDP / مسح العظام
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="has_biopsy" value="1" id="has_biopsy">
+                                        <label class="form-check-label" for="has_biopsy">
+                                            Biopsy / خزعة
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="has_endoscopy" value="1" id="has_endoscopy">
+                                        <label class="form-check-label" for="has_endoscopy">
+                                            Endoscopy / تنظير
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="has_surgery" value="1" id="has_surgery">
+                                        <label class="form-check-label" for="has_surgery">
+                                            Surgery / جراحة
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label fw-semibold">Other Attachments <span class="dual-language">مرفقات أخرى</span></label>
+                                    <textarea class="form-control" name="other_attachments" rows="2" placeholder="Specify other medical history attachments"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Diagnosis -->
+                <section class="form-section">
+                    <div class="section-title">
+                        <h3><i class="fas fa-stethoscope me-2"></i>Diagnosis <small class="dual-language">التشخيص</small></h3>
+                        <span class="text-muted">Section 8</span>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Tumor Location <span class="dual-language">موقع الورم</span></label>
+                                    <select class="form-select" name="tumor_location">
+                                        <option value="">Select location...</option>
+                                        <option value="Right">Right / يمين</option>
+                                        <option value="Left">Left / يسار</option>
+                                        <option value="Both">Both / كلا</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Tumor Type <span class="dual-language">نوع الورم</span></label>
+                                    <input type="text" class="form-control" name="tumor_type" placeholder="Tumor type">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Diagnosis Details <span class="dual-language">تفاصيل التشخيص</span></label>
+                                    <textarea class="form-control" name="diagnosis_details" rows="2" placeholder="Diagnosis details"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Reason for Study -->
+                <section class="form-section">
+                    <div class="section-title">
+                        <h3><i class="fas fa-question-circle me-2"></i>Reason for Study <small class="dual-language">سبب الدراسة</small></h3>
+                        <span class="text-muted">Section 9</span>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Reason for Study <span class="dual-language">سبب الدراسة</span> <span class="required-badge">*</span></label>
+                                    <select class="form-select" name="reason_for_study" required>
+                                        <option value="">Select reason...</option>
+                                        <option value="Follow up">Follow up / متابعة</option>
+                                        <option value="Initial assessment">Initial assessment / تقييم أولي</option>
+                                        <option value="Response of therapy">Response of therapy / استجابة للعلاج</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Reason Details <span class="dual-language">تفاصيل السبب</span></label>
+                                    <textarea class="form-control" name="reason_details" rows="2" placeholder="Additional details about the reason for study"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Chemotherapy -->
+                <section class="form-section">
+                    <div class="section-title">
+                        <h3><i class="fas fa-pills me-2"></i>Chemotherapy <small class="dual-language">العلااج الكيميائي</small></h3>
+                        <span class="text-muted">Section 10</span>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Chemotherapy <span class="dual-language">العلاج الكيميائي</span></label>
+                                    <select class="form-select" name="chemotherapy">
+                                        <option value="">Select...</option>
+                                        <option value="Yes">Yes / نعم</option>
+                                        <option value="No">No / لا</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Chemo Type <span class="dual-language">نوع العلاج الكيميائي</span></label>
+                                    <select class="form-select" name="chemo_type">
+                                        <option value="">Select type...</option>
+                                        <option value="Tablets">Tablets / أقراص</option>
+                                        <option value="Infusion">Infusion / حقن</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Sessions Number <span class="dual-language">عدد الجلسات</span></label>
+                                    <input type="number" class="form-control" name="chemo_sessions_number" min="0" placeholder="Number of sessions">
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label fw-semibold">Chemo Details <span class="dual-language">تفاصيل العلاج الكيميائي</span></label>
+                                    <textarea class="form-control" name="chemo_details" rows="2" placeholder="Chemotherapy details"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Radiotherapy -->
+                <section class="form-section">
+                    <div class="section-title">
+                        <h3><i class="fas fa-radiation-alt me-2"></i>Radiotherapy <small class="dual-language">العلاج الإشعاعي</small></h3>
+                        <span class="text-muted">Section 11</span>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Radiotherapy <span class="dual-language">العلاج الإشعاعي</span></label>
+                                    <select class="form-select" name="radiotherapy">
+                                        <option value="">Select...</option>
+                                        <option value="Yes">Yes / نعم</option>
+                                        <option value="No">No / لا</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Anatomical Site <span class="dual-language">الموقع التشريحي</span></label>
+                                    <input type="text" class="form-control" name="radio_anatomical_site" placeholder="Anatomical site">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Sessions Number <span class="dual-language">عدد الجلسات</span></label>
+                                    <input type="number" class="form-control" name="radio_sessions_number" min="0" placeholder="Number of sessions">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Last Session Date <span class="dual-language">تاريخ الجلسة الأخيرة</span></label>
+                                    <input type="date" class="form-control" name="radio_last_session_date">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Hormonal Treatment -->
+                <section class="form-section">
+                    <div class="section-title">
+                        <h3><i class="fas fa-dna me-2"></i>Hormonal Treatment <small class="dual-language">العلاج الهرموني</small></h3>
+                        <span class="text-muted">Section 12</span>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Hormonal Treatment <span class="dual-language">العلاج الهرموني</span></label>
+                                    <select class="form-select" name="hormonal_treatment">
+                                        <option value="">Select...</option>
+                                        <option value="Yes">Yes / نعم</option>
+                                        <option value="No">No / لا</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Last Dose Date <span class="dual-language">تاريخ الجرعة الأخيرة</span></label>
+                                    <input type="date" class="form-control" name="hormonal_last_dose_date">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Surgery Information -->
+                <section class="form-section">
+                    <div class="section-title">
+                        <h3><i class="fas fa-user-md me-2"></i>Surgery Information <small class="dual-language">معلومات الجراحة</small></h3>
+                        <span class="text-muted">Section 13</span>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Surgery Type <span class="dual-language">نوع الجراحة</span></label>
+                                    <input type="text" class="form-control" name="surgery_type" placeholder="Type of surgery">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Last Surgery Date <span class="dual-language">تاريخ الجراحة الأخيرة</span></label>
+                                    <input type="date" class="form-control" name="last_surgery_date">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Additional Notes -->
+                <section class="form-section">
+                    <div class="section-title">
+                        <h3><i class="fas fa-sticky-note me-2"></i>Additional Notes <small class="dual-language">ملاحظات إضافية</small></h3>
+                        <span class="text-muted">Section 14</span>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="col-md-12">
+                                <label class="form-label fw-semibold">Other Notes <span class="dual-language">ملاحظات أخرى</span></label>
+                                <textarea class="form-control" name="other_notes" rows="3" placeholder="Any additional notes or observations"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Digital Signatures -->
+                <section class="form-section">
+                    <div class="section-title">
+                        <h3><i class="fas fa-signature me-2"></i>Digital Signatures <small class="dual-language">التوقيعات الرقمية</small></h3>
+                        <span class="text-muted">Section 15</span>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="row">
+                                <!-- Radiologist Signature -->
+                                <div class="col-md-6">
+                                    <h5 class="fw-semibold mb-3">Radiologist Signature <span class="dual-language">توقيع الطبيب الإشعاعي</span> <span class="required-badge">*</span></h5>
+                                    <div id="radiologistSignaturePreview" class="signature-pad p-3 mb-3 border rounded bg-light" style="height: 150px; display: flex; align-items: center; justify-content: center;">
+                                        <span class="text-muted">Signature will appear here</span>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" id="applyRadiologistSignatureBtn">
+                                        <i class="fas fa-signature me-1"></i>Apply My Signature
+                                    </button>
+                                    <div id="radiologistSignatureStatus" class="mt-2 text-muted small"></div>
+                                </div>
+
+                                <!-- Patient Signature -->
+                                <div class="col-md-6">
+                                    <h5 class="fw-semibold mb-3">Patient Signature <span class="dual-language">توقيع المريض</span> <span class="required-badge">*</span></h5>
+                                    <div id="patientSignaturePad" class="signature-pad border rounded p-2 mb-3" style="height: 150px;">
+                                        <canvas id="patientSignatureCanvas" width="400" height="120" class="w-100 h-100"></canvas>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-outline-success btn-sm" id="savePatientSignatureBtn">
+                                            <i class="fas fa-save me-1"></i>Save Signature
+                                        </button>
+                                        <button type="button" class="btn btn-outline-danger btn-sm" id="clearPatientSignatureBtn">
+                                            <i class="fas fa-eraser me-1"></i>Clear
+                                        </button>
+                                    </div>
+                                    <!-- Preview for saved patient signature (matches radiology form) -->
+                                    <div class="signature-preview mt-2" id="patientSignaturePreview" aria-live="polite"></div>
+                                     <div id="patientSignatureStatus" class="mt-2 text-muted small">Draw the signature and click "Save Signature".</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Form Actions -->
+                <section class="form-section">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="badge bg-secondary me-2" id="formStatusBadge">Draft</span>
+                                    <small class="text-muted">Form Status / حالة النموذج</small>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-outline-secondary" id="saveDraftBtn">
+                                        <i class="fas fa-save me-1"></i>Save as Draft / حفظ كمسودة
+                                    </button>
+                                    <button type="submit" class="btn btn-success" id="submitBtn">
+                                        <i class="fas fa-paper-plane me-1"></i>Submit Form / إرسال النموذج
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </form>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/form-validation.js"></script>
+    <script src="/js/signature-utils.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize form validation
+            const petScanForm = document.getElementById('petScanForm');
+            if (petScanForm) {
+                initializeFormValidation(petScanForm);
+            }
+
+            // Radiologist signature handling
+            const radiologistSignatureData = document.getElementById('radiologistSignatureData');
+            const radiologistSignatureInput = document.getElementById('radiologistSignatureInput');
+            const radiologistSignaturePreview = document.getElementById('radiologistSignaturePreview');
+            const applyRadiologistSignatureBtn = document.getElementById('applyRadiologistSignatureBtn');
+            const radiologistSignatureStatus = document.getElementById('radiologistSignatureStatus');
+
+            // Helper to render signatures consistently (shared for radiologist and patient preview)
+            function renderSignatureElement(container, signatureData) {
+                if (!container) return;
+                container.innerHTML = window.SignatureUtils.renderSignature(signatureData, {
+                    maxHeight: 120,
+                    altText: 'Signature preview'
+                });
+            }
+
+            if (applyRadiologistSignatureBtn) {
+                applyRadiologistSignatureBtn.addEventListener('click', function() {
+                    const signatureData = radiologistSignatureData.dataset.signature;
+                    if (signatureData) {
+                        radiologistSignatureInput.value = signatureData;
+                        renderSignatureElement(radiologistSignaturePreview, signatureData);
+                        radiologistSignatureStatus.textContent = 'Radiologist signature applied successfully.';
+                        radiologistSignatureStatus.className = 'mt-2 text-success small';
+                    } else {
+                        radiologistSignatureStatus.textContent = 'No saved signature found. Please contact administrator.';
+                        radiologistSignatureStatus.className = 'mt-2 text-warning small';
+                    }
+                });
+            }
+
+            // Patient signature handling
+            const patientSignatureCanvas = document.getElementById('patientSignatureCanvas');
+            const patientSignatureInput = document.getElementById('patientSignatureInput');
+            const patientSignaturePreview = document.getElementById('patientSignaturePreview');
+            const savePatientSignatureBtn = document.getElementById('savePatientSignatureBtn');
+            const clearPatientSignatureBtn = document.getElementById('clearPatientSignatureBtn');
+            const patientSignatureStatus = document.getElementById('patientSignatureStatus');
+
+            // Use the shared SignatureUtils to initialize a robust signature pad
+            let patientSignaturePadInstance = null;
+            if (patientSignatureCanvas && window.SignatureUtils && window.SignatureUtils.initSignaturePad) {
+                patientSignaturePadInstance = window.SignatureUtils.initSignaturePad(patientSignatureCanvas, {
+                    onChange: () => {
+                        // no-op: used to enable/disable buttons if needed
+                    },
+                    onClear: () => {
+                        patientSignatureInput.value = '';
+                        patientSignaturePreview.innerHTML = '';
+                        patientSignatureStatus.textContent = 'Signature pad cleared. Draw the signature and click "Save Signature".';
+                    }
+                });
+            }
+
+            if (savePatientSignatureBtn) {
+                savePatientSignatureBtn.addEventListener('click', () => {
+                    if (!patientSignaturePadInstance) {
+                        patientSignatureStatus.textContent = 'Signature pad is not available.';
+                        return;
+                    }
+                    if (patientSignaturePadInstance.isEmpty && patientSignaturePadInstance.isEmpty()) {
+                        patientSignatureStatus.textContent = 'Please draw the signature before saving.';
+                        return;
+                    }
+                    try {
+                        const svgDataUrl = patientSignaturePadInstance.getData();
+                        patientSignatureInput.value = svgDataUrl;
+                        renderSignatureElement(patientSignaturePreview, svgDataUrl);
+                        patientSignatureStatus.textContent = 'Patient signature captured successfully.';
+                    } catch (err) {
+                        console.error('Error generating signature data:', err);
+                        patientSignatureStatus.textContent = 'Failed to capture signature.';
+                    }
+                });
+            }
+
+            if (clearPatientSignatureBtn) {
+                clearPatientSignatureBtn.addEventListener('click', () => {
+                    if (patientSignaturePadInstance && patientSignaturePadInstance.clear) {
+                        patientSignaturePadInstance.clear();
+                    }
+                    patientSignatureInput.value = '';
+                    if (patientSignaturePreview) patientSignaturePreview.innerHTML = '';
+                });
+            }
+
+            // Form status handling
+            const formStatusBadge = document.getElementById('formStatusBadge');
+            const saveDraftBtn = document.getElementById('saveDraftBtn');
+            const submitBtn = document.getElementById('submitBtn');
+
+            if (saveDraftBtn) {
+                saveDraftBtn.addEventListener('click', function() {
+                    let statusInput = document.querySelector('input[name="form_status"]');
+                    if (!statusInput) {
+                        statusInput = document.createElement('input');
+                        statusInput.type = 'hidden';
+                        statusInput.name = 'form_status';
+                        petScanForm.appendChild(statusInput);
+                    }
+                    statusInput.value = 'draft';
+                    if (formStatusBadge) {
+                        formStatusBadge.textContent = 'Draft';
+                        formStatusBadge.className = 'badge bg-secondary ms-2';
+                    }
+                    petScanForm.submit();
+                });
+            }
+
+            if (submitBtn) {
+                submitBtn.addEventListener('click', function() {
+                    let statusInput = document.querySelector('input[name="form_status"]');
+                    if (!statusInput) {
+                        statusInput = document.createElement('input');
+                        statusInput.type = 'hidden';
+                        statusInput.name = 'form_status';
+                        petScanForm.appendChild(statusInput);
+                    }
+                    statusInput.value = 'completed';
+                    if (formStatusBadge) {
+                        formStatusBadge.textContent = 'Completed';
+                        formStatusBadge.className = 'badge bg-success ms-2';
+                    }
+                });
+            }
+
+            // Form submission validation
+            petScanForm.addEventListener('submit', (event) => {
+                if (!radiologistSignatureInput.value) {
+                    event.preventDefault();
+                    radiologistSignatureStatus.textContent = 'Radiologist signature is required. Please apply your signature before submitting.';
+                    radiologistSignatureStatus.className = 'mt-2 text-danger small';
+                    applyRadiologistSignatureBtn.focus();
+                    return;
+                }
+
+                if (!patientSignatureInput.value) {
+                    if (hasDrawn) {
+                        const dataUrl = patientSignatureCanvas.toDataURL('image/png');
+                        patientSignatureInput.value = dataUrl;
+                        renderSignatureElement(patientSignaturePreview, dataUrl);
+                    }
+
+                    if (!patientSignatureInput.value) {
+                        event.preventDefault();
+                        patientSignatureStatus.textContent = 'Patient signature is required before submission.';
+                        patientSignatureStatus.className = 'mt-2 text-danger small';
+                        patientSignaturePad.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        return;
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

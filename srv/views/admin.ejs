@@ -1,0 +1,451 @@
+<head>
+    <%- include('partials/head', { title: 'Admin Dashboard - Al-Shorouk Radiology' }) %>
+</head>
+
+<body>
+    <!-- Navigation -->
+    <%- include('navigation', { currentPage: 'admin' }) %>
+
+        <div class="container mt-4 mb-5" id="main-content" role="main">
+            <!-- Header Section -->
+            <div class="d-flex justify-content-between align-items-center mb-4 fade-in">
+                <div>
+                    <h2 class="fw-bold text-primary mb-1">Dashboard Overview</h2>
+                    <p class="text-muted mb-0">
+                        <i class="far fa-calendar-alt me-2"></i>
+                        <%= new Date().toLocaleDateString('en-US', { weekday: 'long' , year: 'numeric' , month: 'long' ,
+                            day: 'numeric' }) %>
+                    </p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary" onclick="window.location.reload()">
+                        <i class="fas fa-sync-alt me-2"></i>Refresh Data
+                    </button>
+                </div>
+            </div>
+
+            <!-- KPI Cards Row -->
+            <div class="row g-4 mb-5">
+                <div class="col-md-3">
+                    <div class="card stats-card h-100 border-0 shadow-sm hover-card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <p class="text-uppercase text-white-50 fw-bold fs-7 mb-1">Total Patients</p>
+                                    <h3 class="display-6 fw-bold text-white mb-0">
+                                        <%= stats.patients %>
+                                    </h3>
+                                </div>
+                                <div class="icon-box bg-white bg-opacity-25 rounded-3 p-2">
+                                    <i class="fas fa-user-injured text-white fa-lg"></i>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center text-white-50 fs-7">
+                                <i class="fas fa-arrow-up me-1 text-white"></i>
+                                <span class="text-white fw-bold me-1">+<%= stats.today_visits || 0 %></span>
+                                <span>visits today</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="card bg-white border-0 shadow-sm h-100 hover-card border-start border-4 border-success">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <p class="text-uppercase text-muted fw-bold fs-7 mb-1">Active Visits</p>
+                                    <h3 class="display-6 fw-bold text-dark mb-0">
+                                        <%= stats.visits %>
+                                    </h3>
+                                </div>
+                                <div class="icon-box bg-success bg-opacity-10 rounded-3 p-2">
+                                    <i class="fas fa-procedures text-success fa-lg"></i>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center text-muted fs-7">
+                                <span class="text-success fw-bold me-1">
+                                    <%= stats.today_completed || 0 %>
+                                </span>
+                                <span>completed today</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="card bg-white border-0 shadow-sm h-100 hover-card border-start border-4 border-warning">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <p class="text-uppercase text-muted fw-bold fs-7 mb-1">Assessments</p>
+                                    <h3 class="display-6 fw-bold text-dark mb-0">
+                                        <%= stats.assessments %>
+                                    </h3>
+                                </div>
+                                <div class="icon-box bg-warning bg-opacity-10 rounded-3 p-2">
+                                    <i class="fas fa-file-medical-alt text-warning fa-lg"></i>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center text-muted fs-7">
+                                <i class="fas fa-check-circle me-1 text-warning"></i>
+                                <span>Forms processed</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="card bg-white border-0 shadow-sm h-100 hover-card border-start border-4 border-info">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <p class="text-uppercase text-muted fw-bold fs-7 mb-1">System Users</p>
+                                    <h3 class="display-6 fw-bold text-dark mb-0">
+                                        <%= stats.users %>
+                                    </h3>
+                                </div>
+                                <div class="icon-box bg-info bg-opacity-10 rounded-3 p-2">
+                                    <i class="fas fa-users text-info fa-lg"></i>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center text-muted fs-7">
+                                <i class="fas fa-shield-alt me-1 text-info"></i>
+                                <span>Role-based access</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="row mb-5">
+                <div class="col-lg-8 mb-4 mb-lg-0">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header border-0 py-3">
+                            <h5 class="card-title mb-0 fw-bold text-white">
+                                <i class="fas fa-chart-line me-2"></i>Visit Trends (Last 7 Days)
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div style="height: 300px;">
+                                <canvas id="visitsChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header border-0 py-3">
+                            <h5 class="card-title mb-0 fw-bold text-white">
+                                <i class="fas fa-chart-pie me-2"></i>Visit Status
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container" style="position: relative; height:200px; width:100%">
+                                <canvas id="statusChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header border-0 py-3">
+                            <h5 class="card-title mb-0 fw-bold text-white">
+                                <i class="fas fa-building me-2"></i>Departments
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container" style="position: relative; height:200px; width:100%">
+                                <canvas id="deptChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions Grid -->
+            <h4 class="fw-bold text-primary mb-3"><i class="fas fa-bolt me-2"></i>Quick Actions</h4>
+            <div class="row g-3 mb-5">
+                <div class="col-md-3">
+                    <a href="/admin/users" class="text-decoration-none">
+                        <div class="card h-100 border-0 shadow-sm hover-card action-card">
+                            <div class="card-body text-center p-4">
+                                <div class="icon-circle bg-primary bg-opacity-10 text-primary mx-auto mb-3">
+                                    <i class="fas fa-user-cog fa-2x"></i>
+                                </div>
+                                <h6 class="fw-bold text-dark">User Management</h6>
+                                <p class="text-muted small mb-0">Add, edit, or remove staff accounts</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="/admin/patients" class="text-decoration-none">
+                        <div class="card h-100 border-0 shadow-sm hover-card action-card">
+                            <div class="card-body text-center p-4">
+                                <div class="icon-circle bg-success bg-opacity-10 text-success mx-auto mb-3">
+                                    <i class="fas fa-folder-plus fa-2x"></i>
+                                </div>
+                                <h6 class="fw-bold text-dark">Patient Records</h6>
+                                <p class="text-muted small mb-0">Search and manage patient files</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="/admin/visits" class="text-decoration-none">
+                        <div class="card h-100 border-0 shadow-sm hover-card action-card">
+                            <div class="card-body text-center p-4">
+                                <div class="icon-circle bg-info bg-opacity-10 text-info mx-auto mb-3">
+                                    <i class="fas fa-calendar-alt fa-2x"></i>
+                                </div>
+                                <h6 class="fw-bold text-dark">Visit Scheduler</h6>
+                                <p class="text-muted small mb-0">Monitor and update patient visits</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="/admin/assessments" class="text-decoration-none">
+                        <div class="card h-100 border-0 shadow-sm hover-card action-card">
+                            <div class="card-body text-center p-4">
+                                <div class="icon-circle bg-warning bg-opacity-10 text-warning mx-auto mb-3">
+                                    <i class="fas fa-clipboard-check fa-2x"></i>
+                                </div>
+                                <h6 class="fw-bold text-dark">Forms & Audits</h6>
+                                <p class="text-muted small mb-0">Review submitted assessments history</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Activity Feed -->
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header border-0 py-3 d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0 fw-bold text-white">
+                                <i class="fas fa-history me-2"></i>System Activity Log
+                            </h5>
+                            <span class="badge bg-white text-primary">Live Feed</span>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th class="ps-4">Action</th>
+                                            <th>Details</th>
+                                            <th>User</th>
+                                            <th>Time</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% if (activity && activity.length> 0) { %>
+                                            <% activity.forEach(function(item) { %>
+                                                <tr>
+                                                    <td class="ps-4">
+                                                        <% if (item.action==='New Visit' ) { %>
+                                                            <span class="badge bg-info text-white"><i
+                                                                    class="fas fa-plus me-1"></i>Visit</span>
+                                                            <% } else if (item.action==='Form Submitted' ) { %>
+                                                                <span class="badge bg-success text-white"><i
+                                                                        class="fas fa-file-alt me-1"></i>Form</span>
+                                                                <% } else { %>
+                                                                    <span class="badge bg-secondary">
+                                                                        <%= item.action %>
+                                                                    </span>
+                                                                    <% } %>
+                                                    </td>
+                                                    <td class="text-dark fw-medium">
+                                                        <%= item.details %>
+                                                    </td>
+                                                    <td>
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="avatar-sm bg-primary text-white rounded-circle me-2 d-flex align-items-center justify-content-center"
+                                                                style="width: 24px; height: 24px; font-size: 12px;">
+                                                                <%= item.user ? item.user.charAt(0).toUpperCase() : '?'
+                                                                    %>
+                                                            </div>
+                                                            <span class="text-muted small">
+                                                                <%= item.user || 'Unknown' %>
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                    <td class="text-muted small">
+                                                        <%= new Date(item.timestamp).toLocaleTimeString([],
+                                                            {hour: '2-digit' , minute:'2-digit'}) %>
+                                                            <span class="d-block text-xs text-muted">
+                                                                <%= new Date(item.timestamp).toLocaleDateString() %>
+                                                            </span>
+                                                    </td>
+                                                </tr>
+                                                <% }); %>
+                                                    <% } else { %>
+                                                        <tr>
+                                                            <td colspan="4" class="text-center py-4 text-muted">
+                                                                <i class="fas fa-inbox fa-3x mb-3 text-light"></i>
+                                                                <p>No recent activity found.</p>
+                                                            </td>
+                                                        </tr>
+                                                        <% } %>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Users -->
+                <div class="col-lg-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header border-0 py-3">
+                            <h5 class="card-title mb-0 fw-bold text-white">
+                                <i class="fas fa-user-clock me-2"></i>Recent Users
+                            </h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="list-group list-group-flush">
+                                <% if (users && users.length> 0) { %>
+                                    <% users.slice(0, 5).forEach(function(userItem) { %>
+                                        <div class="list-group-item border-0 px-4 py-3">
+                                            <div class="d-flex align-items-center">
+                                                <div class="flex-shrink-0">
+                                                    <div class="bg-light rounded-circle p-2 border">
+                                                        <i class="fas fa-user text-secondary"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="flex-grow-1 ms-3">
+                                                    <h6 class="mb-0 fw-bold text-dark">
+                                                        <%= userItem.full_name %>
+                                                    </h6>
+                                                    <small class="text-uppercase text-muted"
+                                                        style="font-size: 0.75rem;">
+                                                        <%= userItem.role %>
+                                                    </small>
+                                                </div>
+                                                <% if (userItem.is_active) { %>
+                                                    <span
+                                                        class="position-absolute top-50 end-0 translate-middle-y me-4 p-1 bg-success border border-light rounded-circle">
+                                                        <span class="visually-hidden">Active</span>
+                                                    </span>
+                                                    <% } %>
+                                            </div>
+                                        </div>
+                                        <% }); %>
+                                            <% } %>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-white border-0 p-3">
+                            <a href="/admin/users" class="btn btn-light w-100 text-primary fw-bold">Manage All Users</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <%- include('partials/scripts') %>
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+            <!-- Initialize Charts -->
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    // Data from server
+                    const chartData = <% - JSON.stringify(charts) %>;
+
+                    // 1. Visits Timeline Chart
+                    const ctxVisits = document.getElementById('visitsChart').getContext('2d');
+                    new Chart(ctxVisits, {
+                        type: 'line',
+                        data: {
+                            labels: chartData.timeline.map(item => new Date(item.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })),
+                            datasets: [{
+                                label: 'Patient Visits',
+                                data: chartData.timeline.map(item => item.count),
+                                borderColor: '#16697A',
+                                backgroundColor: 'rgba(22, 105, 122, 0.1)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.4,
+                                pointBackgroundColor: '#fff',
+                                pointBorderColor: '#16697A',
+                                pointHoverBackgroundColor: '#16697A',
+                                pointHoverBorderColor: '#fff'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    grid: { borderDash: [2, 4] },
+                                    ticks: { precision: 0 }
+                                },
+                                x: {
+                                    grid: { display: false }
+                                }
+                            }
+                        }
+                    });
+
+                    // 2. Status Distribution Chart
+                    const ctxStatus = document.getElementById('statusChart').getContext('2d');
+                    new Chart(ctxStatus, {
+                        type: 'doughnut',
+                        data: {
+                            labels: chartData.status.map(item => item.visit_status.charAt(0).toUpperCase() + item.visit_status.slice(1)),
+                            datasets: [{
+                                data: chartData.status.map(item => item.count),
+                                backgroundColor: [
+                                    '#16697A', // Primary
+                                    '#489FB5', // Info
+                                    '#174D38', // Success
+                                    '#FFA62B'  // Warning
+                                ],
+                                borderWidth: 0
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            cutout: '70%',
+                            plugins: {
+                                legend: { position: 'right', labels: { boxWidth: 12 } }
+                            }
+                        }
+                    });
+
+                    // 3. Departments Chart
+                    const ctxDept = document.getElementById('deptChart').getContext('2d');
+                    new Chart(ctxDept, {
+                        type: 'bar',
+                        data: {
+                            labels: chartData.departments.map(item => item.department),
+                            datasets: [{
+                                label: 'Visits',
+                                data: chartData.departments.map(item => item.count),
+                                backgroundColor: '#489FB5',
+                                borderRadius: 4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            indexAxis: 'y',
+                            plugins: {
+                                legend: { display: false }
+                            },
+                            scales: {
+                                x: { beginAtZero: true, grid: { display: false }, ticks: { precision: 0 } },
+                                y: { grid: { display: false } }
+                            }
+                        }
+                    });
+                });
+            </script>
+</body>
+
+</html>

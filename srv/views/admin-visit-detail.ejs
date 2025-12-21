@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visit Details - Al-Shorouk Radiology Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/css/custom.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .navbar-brand {
+            font-weight: bold;
+        }
+        .navbar-brand i {
+            color: #ffffff;
+        }
+        .navbar-nav .nav-link {
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        .navbar-nav .nav-link:hover {
+            color: rgba(255, 255, 255, 0.8) !important;
+        }
+        .navbar-nav .nav-link.active {
+            color: #ffffff !important;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+        }
+        .user-info {
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        .user-role {
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+        .logout-btn {
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+        .logout-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .btn-custom {
+            border-radius: 25px;
+            padding: 8px 20px;
+        }
+        .patient-info {
+            background-color: #e3f2fd;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .assessment-card {
+            border-left: 4px solid #007bff;
+        }
+        .vital-signs {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        .badge {
+            font-size: 0.8em;
+        }
+        .status-completed {
+            background-color: #28a745;
+        }
+        .status-in-progress {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        .status-open {
+            background-color: #17a2b8;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <%- include('navigation', { currentPage: 'visits' }) %>
+
+    <div class="container mt-4">
+        <!-- Notification -->
+        <% if (typeof notification !== 'undefined' && notification) { %>
+            <div class="alert alert-<%= notification.type === 'success' ? 'success' : 'danger' %> alert-dismissible fade show" role="alert" id="notificationAlert">
+                <i class="fas fa-<%= notification.type === 'success' ? 'check-circle' : 'exclamation-triangle' %> me-2"></i>
+                <%= notification.message %>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <% } %>
+
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2><i class="fas fa-file-medical me-2"></i>Visit Details</h2>
+                        <p class="text-muted">Visit ID: <%= visit.visit_id %></p>
+                    </div>
+                    <div>
+                        <div class="btn-group me-2">
+                            <a href="/admin/visits/<%= visit.visit_id %>/print-compact" class="btn btn-success btn-custom" target="_blank">
+                                <i class="fas fa-print me-2"></i>Print
+                            </a>
+                        </div>
+                        <a href="/admin/visits" class="btn btn-secondary btn-custom">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Visits
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visit Status -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <h5>Visit Status</h5>
+                                <% if (visit.visit_status === 'completed') { %>
+                                    <span class="badge status-completed fs-6"><i class="fas fa-check-circle me-1"></i>Completed</span>
+                                <% } else if (visit.visit_status === 'in_progress') { %>
+                                    <span class="badge status-in-progress fs-6"><i class="fas fa-clock me-1"></i>In Progress</span>
+                                <% } else if (visit.visit_status === 'open') { %>
+                                    <span class="badge status-open fs-6"><i class="fas fa-circle me-1"></i>Open</span>
+                                <% } else { %>
+                                    <span class="badge bg-secondary fs-6"><%= visit.visit_status %></span>
+                                <% } %>
+                            </div>
+                            <div class="col-md-3">
+                                <h5>Visit Date</h5>
+                                <p class="mb-0"><%= new Date(visit.visit_date).toLocaleDateString() %> <%= new Date(visit.visit_date).toLocaleTimeString() %></p>
+                            </div>
+                            <div class="col-md-3">
+                                <h5>Department</h5>
+                                <p class="mb-0"><%= visit.department || 'Not specified' %></p>
+                            </div>
+                            <div class="col-md-3">
+                                <h5>Created By</h5>
+                                <p class="mb-0"><%= visit.created_by_name || 'System' %></p>
+                            </div>
+                        </div>
+                        <% if (visit.completed_at) { %>
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <h5>Completed At</h5>
+                                    <p class="mb-0"><%= new Date(visit.completed_at).toLocaleDateString() %> <%= new Date(visit.completed_at).toLocaleTimeString() %></p>
+                                </div>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Patient Information -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="patient-info">
+                    <h4><i class="fas fa-user me-2"></i>Patient Information</h4>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>Full Name:</strong><br>
+                            <%= visit.full_name %>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Medical Number:</strong><br>
+                            <%= visit.medical_number %>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>SSN:</strong><br>
+                            <%= visit.patient_ssn %>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Date of Birth:</strong><br>
+                            <%= new Date(visit.date_of_birth).toLocaleDateString() %>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-3">
+                            <strong>Gender:</strong><br>
+                            <%= visit.gender %>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Mobile:</strong><br>
+                            <%= visit.mobile_number %>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Phone:</strong><br>
+                            <%= visit.phone_number %>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Emergency Contact:</strong><br>
+                            <%= visit.emergency_contact_name %> (<%= visit.emergency_contact_relation %>)<br>
+                            <small><%= visit.emergency_contact_phone %></small>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <strong>Address:</strong><br>
+                            <%= visit.address %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Diagnosis Information -->
+        <% if (visit.primary_diagnosis) { %>
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h4><i class="fas fa-stethoscope me-2"></i>Diagnosis Information</h4>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Primary Diagnosis:</strong><br>
+                                    <%= visit.primary_diagnosis %>
+                                </div>
+                                <% if (visit.secondary_diagnosis) { %>
+                                    <div class="col-md-6">
+                                        <strong>Secondary Diagnosis:</strong><br>
+                                        <%= visit.secondary_diagnosis %>
+                                    </div>
+                                <% } %>
+                            </div>
+                            <% if (visit.diagnosis_code) { %>
+                                <div class="row mt-3">
+                                    <div class="col-md-6">
+                                        <strong>Diagnosis Code:</strong><br>
+                                        <%= visit.diagnosis_code %>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong>Visit Type:</strong><br>
+                                        <%= visit.visit_type || 'Not specified' %>
+                                    </div>
+                                </div>
+                            <% } %>
+                            <% if (visit.notes) { %>
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <strong>Notes:</strong><br>
+                                        <%= visit.notes %>
+                                    </div>
+                                </div>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <% } %>
+
+        <!-- Nursing Assessment -->
+        <% if (nursingAssessment) { %>
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card assessment-card">
+                        <div class="card-body">
+                            <h4><i class="fas fa-user-nurse me-2 text-primary"></i>Nursing Assessment</h4>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <strong>Assessed By:</strong> <%= nursingAssessment.assessed_by_name || 'Unknown' %>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Assessment Date:</strong> <%= nursingAssessment.assessed_at ? new Date(nursingAssessment.assessed_at).toLocaleString() : 'Not specified' %>
+                                </div>
+                            </div>
+
+                            <% if (nursingAssessment.chief_complaint) { %>
+                                <div class="row mb-3">
+                                    <div class="col-12">
+                                        <strong>Chief Complaint:</strong><br>
+                                        <%= nursingAssessment.chief_complaint %>
+                                    </div>
+                                </div>
+                            <% } %>
+
+                            <!-- Vital Signs -->
+                            <div class="vital-signs mb-3">
+                                <h5><i class="fas fa-heartbeat me-2"></i>Vital Signs</h5>
+                                <div class="row">
+                                    <div class="col-md-2">
+                                        <strong>Temperature:</strong><br>
+                                        <%= nursingAssessment.temperature_celsius || 'N/A' %> °C
+                                    </div>
+                                    <div class="col-md-2">
+                                        <strong>Pulse:</strong><br>
+                                        <%= nursingAssessment.pulse_bpm || 'N/A' %> bpm
+                                    </div>
+                                    <div class="col-md-2">
+                                        <strong>Blood Pressure:</strong><br>
+                                        <%= nursingAssessment.blood_pressure_systolic || 'N/A' %>/<%= nursingAssessment.blood_pressure_diastolic || 'N/A' %> mmHg
+                                    </div>
+                                    <div class="col-md-2">
+                                        <strong>Respiratory Rate:</strong><br>
+                                        <%= nursingAssessment.respiratory_rate_per_min || 'N/A' %> /min
+                                    </div>
+                                    <div class="col-md-2">
+                                        <strong>SpO2:</strong><br>
+                                        <%= nursingAssessment.oxygen_saturation_percent || 'N/A' %>%
+                                    </div>
+                                    <div class="col-md-2">
+                                        <strong>Blood Sugar:</strong><br>
+                                        <%= nursingAssessment.blood_sugar_mg_dl || 'N/A' %> mg/dL
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Physical Assessment -->
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h5>Physical Assessment</h5>
+                                    <p><strong>General Condition:</strong> <%= nursingAssessment.general_condition || 'N/A' %></p>
+                                    <p><strong>Consciousness Level:</strong> <%= nursingAssessment.consciousness_level || 'N/A' %></p>
+                                    <p><strong>Skin Condition:</strong> <%= nursingAssessment.skin_condition || 'N/A' %></p>
+                                    <p><strong>Mobility Status:</strong> <%= nursingAssessment.mobility_status || 'N/A' %></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h5>Additional Information</h5>
+                                    <p><strong>Psychological Problem:</strong> <%= nursingAssessment.psychological_problem || 'None' %></p>
+                                    <p><strong>Smoker:</strong> <%= nursingAssessment.is_smoker ? 'Yes' : 'No' %></p>
+                                    <p><strong>Allergies:</strong> <%= nursingAssessment.has_allergies ? 'Yes' : 'No' %></p>
+                                    <p><strong>Diet Type:</strong> <%= nursingAssessment.diet_type || 'N/A' %></p>
+                                </div>
+                            </div>
+
+                            <% if (nursingAssessment.pain_intensity) { %>
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <h5><i class="fas fa-exclamation-triangle me-2 text-warning"></i>Pain Assessment</h5>
+                                        <div class="row">
+                                            <div class="col-md-3">
+                                                <strong>Pain Intensity:</strong> <%= nursingAssessment.pain_intensity %>/10
+                                            </div>
+                                            <div class="col-md-3">
+                                                <strong>Pain Location:</strong> <%= nursingAssessment.pain_location || 'N/A' %>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <strong>Action Taken:</strong> <%= nursingAssessment.action_taken || 'N/A' %>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            <% } %>
+
+                            <!-- Nurse Signature -->
+                            <% if (nursingAssessment.nurse_signature) { %>
+                                <div class="row mt-4">
+                                    <div class="col-12">
+                                        <h5><i class="fas fa-signature me-2"></i>Nurse Signature</h5>
+                                        <div class="border rounded p-3 bg-light">
+                                            <img src="<%= nursingAssessment.nurse_signature %>" alt="Nurse Signature" class="img-fluid" style="max-height: 100px;">
+                                        </div>
+                                    </div>
+                                </div>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <% } %>
+
+        <!-- Radiology Assessment -->
+        <% if (radiologyAssessment) { %>
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card assessment-card">
+                        <div class="card-body">
+                            <h4><i class="fas fa-x-ray me-2 text-success"></i>Radiology Assessment</h4>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <strong>Assessed By:</strong> <%= radiologyAssessment.assessed_by_name || 'Unknown' %>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Assessment Date:</strong> <%= radiologyAssessment.assessed_at ? new Date(radiologyAssessment.assessed_at).toLocaleString() : 'Not specified' %>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <strong>Treating Physician:</strong><br>
+                                    <%= radiologyAssessment.treating_physician || 'N/A' %>
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Department:</strong><br>
+                                    <%= radiologyAssessment.department || 'N/A' %>
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Modality:</strong><br>
+                                    <%= radiologyAssessment.modality || 'N/A' %>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <strong>Diagnosis:</strong><br>
+                                    <%= radiologyAssessment.diagnosis || 'N/A' %>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <strong>Reason for Study:</strong><br>
+                                    <%= radiologyAssessment.reason_for_study || 'N/A' %>
+                                </div>
+                            </div>
+
+                            <% if (radiologyAssessment.findings) { %>
+                                <div class="row mb-3">
+                                    <div class="col-12">
+                                        <h5><i class="fas fa-search me-2"></i>Findings</h5>
+                                        <div class="bg-light p-3 rounded">
+                                            <%= radiologyAssessment.findings.replace(/\n/g, '<br>') %>
+                                        </div>
+                                    </div>
+                                </div>
+                            <% } %>
+
+                            <% if (radiologyAssessment.impression) { %>
+                                <div class="row mb-3">
+                                    <div class="col-12">
+                                        <h5><i class="fas fa-brain me-2"></i>Impression</h5>
+                                        <div class="bg-light p-3 rounded">
+                                            <%= radiologyAssessment.impression.replace(/\n/g, '<br>') %>
+                                        </div>
+                                    </div>
+                                </div>
+                            <% } %>
+
+                            <% if (radiologyAssessment.recommendations) { %>
+                                <div class="row mb-3">
+                                    <div class="col-12">
+                                        <h5><i class="fas fa-lightbulb me-2"></i>Recommendations</h5>
+                                        <div class="bg-light p-3 rounded">
+                                            <%= radiologyAssessment.recommendations.replace(/\n/g, '<br>') %>
+                                        </div>
+                                    </div>
+                                </div>
+                            <% } %>
+
+                            <!-- Physician Signature -->
+                            <% if (radiologyAssessment.physician_signature) { %>
+                                <div class="row mt-4">
+                                    <div class="col-12">
+                                        <h5><i class="fas fa-signature me-2"></i>Physician Signature</h5>
+                                        <div class="border rounded p-3 bg-light">
+                                            <img src="<%= radiologyAssessment.physician_signature %>" alt="Physician Signature" class="img-fluid" style="max-height: 100px;">
+                                        </div>
+                                    </div>
+                                </div>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <% } %>
+
+        <!-- No Assessments Message -->
+        <% if (!nursingAssessment && !radiologyAssessment) { %>
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                            <h4>No Assessments Found</h4>
+                            <p class="text-muted">This visit does not have any nursing or radiology assessments yet.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <% } %>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Auto-hide notification after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            const notificationAlert = document.getElementById('notificationAlert');
+            if (notificationAlert) {
+                setTimeout(function() {
+                    const alert = new bootstrap.Alert(notificationAlert);
+                    alert.close();
+                }, 5000); // 5 seconds
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Management - Al-Shorouk Radiology Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/css/custom.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .navbar-brand {
+            font-weight: bold;
+        }
+        .navbar-brand i {
+            color: #ffffff;
+        }
+        .navbar-nav .nav-link {
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        .navbar-nav .nav-link:hover {
+            color: rgba(255, 255, 255, 0.8) !important;
+        }
+        .navbar-nav .nav-link.active {
+            color: #ffffff !important;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+        }
+        .user-info {
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        .user-role {
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+        .logout-btn {
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+        .logout-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .btn-custom {
+            border-radius: 25px;
+            padding: 8px 20px;
+        }
+        .table th {
+            background-color: #28a745;
+            color: white;
+            border: none;
+        }
+        .table td {
+            vertical-align: middle;
+        }
+        .badge {
+            font-size: 0.8em;
+        }
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+        }
+        .sortable:hover {
+            background-color: rgba(40, 167, 69, 0.1);
+        }
+        .sort-icon {
+            margin-left: 5px;
+            opacity: 0.5;
+        }
+        .sortable.sort-asc .sort-icon:before {
+            content: "\f145"; /* fa-sort-up */
+        }
+        .sortable.sort-desc .sort-icon:before {
+            content: "\f144"; /* fa-sort-down */
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <%- include('navigation', { currentPage: 'admin' }) %>
+
+    <div class="container mt-4" id="main-content" role="main">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <!-- Breadcrumbs -->
+                <nav aria-label="breadcrumb" class="mb-3">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="/"><i class="fas fa-home me-1" aria-hidden="true"></i>Home</a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <a href="/admin">Admin</a>
+                        </li>
+                        <li class="breadcrumb-item active" aria-current="page">Patient Management</li>
+                    </ol>
+                </nav>
+
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2><i class="fas fa-user-injured me-2" aria-hidden="true"></i>Patient Management</h2>
+                        <p class="text-muted">Manage patient records and information</p>
+                    </div>
+                    <a href="/admin/patients/new" class="btn btn-success btn-custom">
+                        <i class="fas fa-plus me-2" aria-hidden="true"></i>Add New Patient
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notification -->
+        <% if (notification) { %>
+            <div class="alert alert-<%= notification.type === 'success' ? 'success' : 'danger' %> alert-dismissible fade show" role="alert">
+                <i class="fas fa-<%= notification.type === 'success' ? 'check-circle' : 'exclamation-triangle' %> me-2" aria-hidden="true"></i>
+                <%= notification.message %>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <% } %>
+
+        <!-- Search and Filters -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <form method="GET" action="/admin/patients">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="search" class="form-label">
+                                        <i class="fas fa-search me-1" aria-hidden="true"></i>Search Patients
+                                    </label>
+                                    <input type="text" class="form-control" id="search" name="search" value="<%= filters.search || '' %>" placeholder="Search by name, medical number, or SSN...">
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="gender" class="form-label">
+                                        <i class="fas fa-venus-mars me-1" aria-hidden="true"></i>Filter by Gender
+                                    </label>
+                                    <select class="form-select" id="gender" name="gender">
+                                        <option value="all" <%= !filters.gender || filters.gender === 'all' ? 'selected' : '' %>>All Genders</option>
+                                        <option value="male" <%= filters.gender === 'male' ? 'selected' : '' %>>Male</option>
+                                        <option value="female" <%= filters.gender === 'female' ? 'selected' : '' %>>Female</option>
+                                        <option value="other" <%= filters.gender === 'other' ? 'selected' : '' %>>Other</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">&nbsp;</label>
+                                    <div class="d-flex gap-2">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-search me-1" aria-hidden="true"></i>Search
+                                        </button>
+                                        <a href="/admin/patients" class="btn btn-outline-secondary">
+                                            <i class="fas fa-times me-1" aria-hidden="true"></i>Clear
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1" aria-hidden="true"></i>
+                                Showing <%= patients.length %> patient<%= patients.length !== 1 ? 's' : '' %>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Patients Table -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <% if (patients && patients.length > 0) { %>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th class="sortable" data-column="1">
+                                                <i class="fas fa-id-card me-1" aria-hidden="true"></i>SSN
+                                                <i class="fas fa-sort sort-icon" aria-hidden="true"></i>
+                                            </th>
+                                            <th class="sortable" data-column="2">
+                                                <i class="fas fa-user me-1" aria-hidden="true"></i>Full Name
+                                                <i class="fas fa-sort sort-icon" aria-hidden="true"></i>
+                                            </th>
+                                            <th class="sortable" data-column="3">
+                                                <i class="fas fa-mobile-alt me-1" aria-hidden="true"></i>Mobile
+                                                <i class="fas fa-sort sort-icon" aria-hidden="true"></i>
+                                            </th>
+                                            <th>
+                                                <i class="fas fa-notes-medical me-1" aria-hidden="true"></i>Medical Number
+                                            </th>
+                                            <th>
+                                                <i class="fas fa-birthday-cake me-1" aria-hidden="true"></i>Age
+                                            </th>
+                                            <th>
+                                                <i class="fas fa-venus-mars me-1" aria-hidden="true"></i>Gender
+                                            </th>
+                                            <th>
+                                                <i class="fas fa-calendar me-1" aria-hidden="true"></i>Created
+                                            </th>
+                                            <th><i class="fas fa-cogs me-1" aria-hidden="true"></i>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% patients.forEach(patient => { %>
+                                            <%
+                                                // Calculate age
+                                                let age = '';
+                                                if (patient.date_of_birth) {
+                                                    const birthDate = new Date(patient.date_of_birth);
+                                                    const today = new Date();
+                                                    age = today.getFullYear() - birthDate.getFullYear();
+                                                    const monthDiff = today.getMonth() - birthDate.getMonth();
+                                                    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                                                        age--;
+                                                    }
+                                                }
+                                            %>
+                                            <tr>
+                                                <td><code><%= patient.ssn %></code></td>
+                                                <td><%= patient.full_name %></td>
+                                                <td><%= patient.mobile_number %></td>
+                                                <td><%= patient.medical_number || 'Not provided' %></td>
+                                                <td><%= age ? age + ' years' : 'Not provided' %></td>
+                                                <td>
+                                                    <% if (patient.gender === 'male') { %>
+                                                        <span class="badge bg-primary"><i class="fas fa-mars me-1" aria-hidden="true"></i>Male</span>
+                                                    <% } else if (patient.gender === 'female') { %>
+                                                        <span class="badge bg-danger"><i class="fas fa-venus me-1" aria-hidden="true"></i>Female</span>
+                                                    <% } else { %>
+                                                        <span class="badge bg-secondary"><%= patient.gender || 'Not specified' %></span>
+                                                    <% } %>
+                                                </td>
+                                                <td><%= new Date(patient.created_at).toLocaleDateString() %></td>
+                                                <td>
+                                                    <div class="btn-group" role="group">
+                                                        <a href="/admin/patients/<%= patient.ssn %>/edit" class="btn btn-sm btn-outline-primary" title="Edit Patient">
+                                                            <i class="fas fa-edit" aria-hidden="true"></i>
+                                                        </a>
+                                                        <button type="button" class="btn btn-sm btn-outline-danger" title="Delete Patient"
+                                                                onclick="confirmDeletePatient('<%= patient.ssn %>', '<%= patient.full_name %>')">
+                                                            <i class="fas fa-trash" aria-hidden="true"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        <% }); %>
+                                    </tbody>
+                                </table>
+                            </div>
+                        <% } else { %>
+                            <div class="text-center py-5">
+                                <i class="fas fa-user-injured fa-3x text-muted mb-3" aria-hidden="true"></i>
+                                <h3>No Patients Found</h3>
+                                <p class="text-muted">Start by adding your first patient to the system.</p>
+                                <a href="/admin/patients/new" class="btn btn-success">
+                                    <i class="fas fa-plus me-2" aria-hidden="true"></i>Add First Patient
+                                </a>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Delete Patient Confirmation Modal -->
+    <div class="modal fade" id="deletePatientModal" tabindex="-1" aria-labelledby="deletePatientModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h3 class="modal-title" id="deletePatientModalLabel">
+                        <i class="fas fa-exclamation-triangle me-2" aria-hidden="true"></i>Confirm Patient Deletion
+                    </h3>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-warning me-2" aria-hidden="true"></i>
+                        <strong>Warning:</strong> This action cannot be undone!
+                    </div>
+                    <p>Are you sure you want to delete the patient <strong id="deletePatientName"></strong>?</p>
+                    <ul class="text-muted">
+                        <li>All patient visits will be permanently removed</li>
+                        <li>All associated assessments will be deleted</li>
+                        <li>The patient's SSN record will be completely removed</li>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2" aria-hidden="true"></i>Cancel
+                    </button>
+                    <form id="deletePatientForm" method="POST" class="d-inline">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash me-2" aria-hidden="true"></i>Yes, Delete Patient
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Handle delete patient modal
+        function confirmDeletePatient(ssn, patientName) {
+            document.getElementById('deletePatientName').textContent = patientName;
+            document.getElementById('deletePatientForm').action = `/admin/patients/${ssn}/delete`;
+
+            const modal = new bootstrap.Modal(document.getElementById('deletePatientModal'));
+            modal.show();
+        }
+
+        // Table sorting functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const table = document.querySelector('.table');
+            if (!table) return;
+
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            let currentSort = { column: -1, direction: 'asc' };
+
+            document.querySelectorAll('.sortable').forEach(header => {
+                header.addEventListener('click', function() {
+                    const columnIndex = parseInt(this.dataset.column);
+                    let direction = 'asc';
+
+                    if (currentSort.column === columnIndex && currentSort.direction === 'asc') {
+                        direction = 'desc';
+                    }
+
+                    // Sort rows
+                    rows.sort((a, b) => {
+                        let aVal = a.cells[columnIndex].textContent.trim();
+                        let bVal = b.cells[columnIndex].textContent.trim();
+
+                        // Special handling for age column (contains "years")
+                        if (columnIndex === 4) {
+                            aVal = aVal.replace(' years', '');
+                            bVal = bVal.replace(' years', '');
+                            if (aVal === 'Not provided') aVal = '0';
+                            if (bVal === 'Not provided') bVal = '0';
+                            aVal = parseInt(aVal) || 0;
+                            bVal = parseInt(bVal) || 0;
+                        } else {
+                            aVal = aVal.toLowerCase();
+                            bVal = bVal.toLowerCase();
+                        }
+
+                        if (direction === 'asc') {
+                            return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+                        } else {
+                            return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
+                        }
+                    });
+
+                    // Clear existing rows and re-append sorted ones
+                    tbody.innerHTML = '';
+                    rows.forEach(row => tbody.appendChild(row));
+
+                    // Update sort indicators
+                    document.querySelectorAll('.sortable').forEach(h => {
+                        h.classList.remove('sort-asc', 'sort-desc');
+                    });
+
+                    this.classList.add(`sort-${direction}`);
+                    currentSort = { column: columnIndex, direction };
+                });
+
+                // Add keyboard support
+                header.setAttribute('tabindex', '0');
+                header.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        this.click();
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

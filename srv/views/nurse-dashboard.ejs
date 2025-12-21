@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nurse Dashboard - Al-Shorouk Radiology Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="/css/custom.css" rel="stylesheet">
+    <style>
+        .autocomplete-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            z-index: 1050;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .autocomplete-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #f8f9fa;
+        }
+
+        .autocomplete-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .autocomplete-item:last-child {
+            border-bottom: none;
+        }
+
+        .patient-name {
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .patient-details {
+            font-size: 0.875em;
+            color: #495057;
+        }
+
+        .ssn-input {
+            font-size: 1.1em;
+            letter-spacing: 1px;
+        }
+
+        .navbar-brand {
+            font-weight: bold;
+        }
+
+        .navbar-brand i {
+            color: #ffffff;
+        }
+
+        .navbar-nav .nav-link {
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .navbar-nav .nav-link:hover {
+            color: rgba(255, 255, 255, 0.8) !important;
+        }
+
+        .navbar-nav .nav-link.active {
+            color: #ffffff !important;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+        }
+
+        .user-info {
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .user-role {
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .logout-btn {
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+
+<body class="">
+    <!-- Navigation -->
+    <%- include('navigation', { currentPage: 'dashboard' }) %>
+
+        <div class="container mt-4 animate-fade-in">
+            <header class="text-center my-5">
+                <h1 class="display-4 text-dark mb-4">
+                    <i class="fas fa-user-nurse me-3"></i>
+                    Nurse Dashboard
+                </h1>
+                <p class="lead text-muted mb-5">
+                    Manage patient assessments and healthcare forms
+                </p>
+            </header>
+
+            <!-- Quick Actions removed - Document upload now integrated into nurse assessment form -->
+
+            <!-- Notification -->
+            <% if (notification) { %>
+                <div class="alert alert-<%= notification.type === 'success' ? 'success' : 'danger' %> alert-dismissible fade show"
+                    role="alert">
+                    <i
+                        class="fas fa-<%= notification.type === 'success' ? 'check-circle' : 'exclamation-triangle' %> me-2"></i>
+                    <%= notification.message %>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <% } %>
+
+                    <div class="row mb-4">
+                        <!-- Patient Search Section -->
+                        <div class="col-12">
+                            <div class="glass-panel h-100 p-4 border-0">
+                                <div class="d-flex align-items-center mb-4 border-bottom pb-3"
+                                    style="border-color: var(--glass-border) !important;">
+                                    <h4 class="mb-0 text-primary">
+                                        <i class="fas fa-search me-2"></i>Patient Search & Assessment
+                                    </h4>
+                                </div>
+                                <div>
+                                    <!-- Screen Reader Announcements -->
+                                    <div id="sr-announcements" aria-live="polite" aria-atomic="true" class="sr-only">
+                                    </div>
+
+                                    <!-- Search Form -->
+                                    <form method="POST" action="/nurse/search-patient" role="search"
+                                        aria-label="Patient search form">
+                                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                        <div class="row">
+                                            <div class="col-md-12 mb-3" style="position: relative;">
+                                                <label for="patientSearch"
+                                                    class="form-label small text-muted text-uppercase fw-bold">Search by
+                                                    Patient SSN</label>
+                                                <div class="input-group input-group-lg">
+                                                    <span class="input-group-text bg-white border-end-0"><i
+                                                            class="fas fa-id-card text-muted"></i></span>
+                                                    <input type="text" class="form-control border-start-0 ps-0"
+                                                        id="patientSearch" placeholder="Type patient SSN (14 digits)..."
+                                                        style="font-family: monospace; letter-spacing: 1px;"
+                                                        autocomplete="off"
+                                                        aria-describedby="patientSearchHelp patientSearchError"
+                                                        aria-invalid="false">
+                                                </div>
+                                                <div class="form-text" id="patientSearchHelp">
+                                                    <small>Type at least 2 digits to search</small>
+                                                </div>
+                                                <div id="patientSearchError" class="invalid-feedback"
+                                                    style="display: none;" role="alert" aria-live="polite">
+                                                    <!-- Validation error messages will appear here -->
+                                                </div>
+                                                <div id="autocompleteResults" class="autocomplete-results"
+                                                    style="display: none;" role="listbox"
+                                                    aria-label="Patient search results">
+                                                    <!-- Autocomplete results will appear here -->
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6 mb-3" id="ssnSection" style="display: none;">
+                                                <h5 class="mb-3">Confirm Patient Details</h5>
+                                                <div class="mb-3">
+                                                    <label for="patientName" class="form-label">Patient Name</label>
+                                                    <input type="text" class="form-control text-center" id="patientName"
+                                                        readonly aria-describedby="patientNameHelp">
+                                                    <div class="form-text" id="patientNameHelp">
+                                                        <small>Patient's full name</small>
+                                                    </div>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="ssn" class="form-label">Patient SSN</label>
+                                                    <input type="text" class="form-control ssn-input text-center"
+                                                        id="ssn" name="ssn" placeholder="14-digit SSN" pattern="\d{14}"
+                                                        maxlength="14" required aria-describedby="ssnHelp ssnError"
+                                                        aria-invalid="false">
+                                                    <div class="form-text" id="ssnHelp">
+                                                        <small>14-digit Egyptian SSN</small>
+                                                    </div>
+                                                    <div id="ssnError" class="invalid-feedback" style="display: none;"
+                                                        role="alert" aria-live="polite">
+                                                        <!-- SSN validation error messages will appear here -->
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="text-center">
+                                            <div class="d-inline-flex align-items-center gap-3">
+                                                <button type="submit" class="btn btn-success" id="searchBtn" disabled
+                                                    aria-describedby="searchBtnStatus">
+                                                    <i class="fas fa-check-circle me-2"></i>
+                                                    <span id="searchBtnText">Confirm Patient Info & Start
+                                                        Assessment</span>
+                                                </button>
+                                                <div id="patientNotFoundMessage" class="d-none">
+                                                    <small class="text-muted me-2">Patient not found</small>
+                                                    <a href="#" class="btn btn-outline-primary btn-sm"
+                                                        id="addPatientBtn">
+                                                        <i class="fas fa-user-plus me-2"></i>Add New Patient
+                                                    </a>
+                                                </div>
+                                            </div>
+                                            <div id="searchBtnStatus" class="sr-only" aria-live="polite">
+                                                Button is currently disabled. Please complete the patient search first.
+                                            </div>
+                                            <div id="searchLoadingIndicator" class="sr-only" aria-live="assertive"
+                                                aria-atomic="true">
+                                                <!-- Loading status announcements will appear here -->
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <br>
+                    <div class="row mb-4">
+                        <!-- Current Visits Status for Nurses -->
+                        <% if (currentVisits && currentVisits.length> 0) { %>
+                            <div class="col-12">
+                                <div class="card h-100">
+                                    <div
+                                        class="card-header bg-info text-dark d-flex justify-content-between align-items-center">
+                                        <h4 class="card-title mb-0">
+                                            <i class="fas fa-clipboard-list me-2" aria-hidden="true"></i>Your Current
+                                            Assessments
+                                        </h4>
+                                        <!-- Filter Input -->
+                                        <div class="d-flex align-items-center">
+                                            <label for="assessmentFilter" class="form-label">
+                                                <i class="fas fa-filter me-1"></i>Filter Assessments
+                                            </label>
+                                            <input type="text" class="form-control form-control-sm"
+                                                id="assessmentFilter" placeholder="Name or SSN.."
+                                                aria-describedby="filterHelp">
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row g-4" id="assessmentsCards">
+                                            <% currentVisits.forEach(visit=> { %>
+                                                <% if (!visit.assessment_id || visit.is_draft) { %>
+                                                    <div class="col-md-6 col-lg-4 assessment-card"
+                                                        data-patient-name="<%= visit.patient_name.toLowerCase() %>"
+                                                        data-patient-ssn="<%= visit.patient_ssn %>">
+                                                        <div class="glass-card h-100 p-3 border-0 position-relative">
+                                                            <div
+                                                                class="d-flex justify-content-between align-items-start mb-3">
+                                                                <div>
+                                                                    <div class="text-muted small fw-bold"><i
+                                                                            class="far fa-calendar-alt me-1"></i>
+                                                                        <%= new
+                                                                            Date(visit.visit_date).toLocaleDateString()
+                                                                            %>
+                                                                    </div>
+                                                                    <div class="small"
+                                                                        style="color: var(--color-primary);">
+                                                                        <%= new
+                                                                            Date(visit.visit_date).toLocaleTimeString()
+                                                                            %>
+                                                                    </div>
+                                                                </div>
+                                                                <% if (visit.visit_source==='HL7' ) { %>
+                                                                    <span
+                                                                        class="badge bg-soft-info text-info rounded-pill"
+                                                                        title="Created from Millensys">
+                                                                        <i
+                                                                            class="fas fa-network-wired me-1"></i>Millensys
+                                                                    </span>
+                                                                    <% } %>
+                                                            </div>
+                                                            <div>
+                                                                <h5 class="card-title mb-1 fw-bold text-dark">
+                                                                    <%= visit.patient_name %>
+                                                                </h5>
+                                                                <p class="mb-3 text-muted small">
+                                                                    <i class="fas fa-fingerprint me-1"></i>
+                                                                    <%= visit.patient_ssn %>
+                                                                        <span class="mx-1">•</span>
+                                                                        <%= visit.gender %>, <%= visit.calculated_age %>
+                                                                                y
+                                                                </p>
+                                                                <div class="mb-2 assessment-status">
+                                                                    <% if (visit.assessment_id) { %>
+                                                                        <% if (visit.is_draft) { %>
+                                                                            <span class="badge bg-warning text-dark">
+                                                                                <i class="fas fa-edit me-1"></i>Draft
+                                                                            </span>
+                                                                            <% } else { %>
+                                                                                <span class="badge bg-success">
+                                                                                    <i
+                                                                                        class="fas fa-check-circle me-1"></i>Completed
+                                                                                </span>
+                                                                                <% if (visit.nurse_signature) { %>
+                                                                                    <br><small class="text-success"><i
+                                                                                            class="fas fa-signature me-1"></i>Signed</small>
+                                                                                    <% } else { %>
+                                                                                        <br><small
+                                                                                            class="text-warning"><i
+                                                                                                class="fas fa-signature me-1"></i>Unsigned</small>
+                                                                                        <% } %>
+                                                                                            <% } %>
+                                                                                                <% } else { %>
+                                                                                                    <span
+                                                                                                        class="badge bg-secondary">
+                                                                                                        <i
+                                                                                                            class="fas fa-exclamation-triangle me-1"></i>Not
+                                                                                                        Started
+                                                                                                    </span>
+                                                                                                    <% } %>
+                                                                </div>
+                                                                <div class="gap-2 d-grid">
+                                                                    <% if (visit.assessment_id) { %>
+                                                                        <a href="/nurse/assessment/<%= visit.visit_id %>"
+                                                                            class="btn btn-glass btn-sm w-100"
+                                                                            title="<%= visit.is_draft ? 'Continue Assessment' : 'View Assessment' %>">
+                                                                            <i
+                                                                                class="fas fa-<%= visit.is_draft ? 'edit' : 'eye' %> me-2"></i>
+                                                                            <%= visit.is_draft ? 'Continue' : 'View' %>
+                                                                        </a>
+                                                                        <% } else { %>
+                                                                            <a href="/nurse/assessment/<%= visit.visit_id %>"
+                                                                                class="btn btn-glass btn-sm w-100"
+                                                                                title="Start Assessment">
+                                                                                <i class="fas fa-play me-2"></i> Start
+                                                                                Assessment
+                                                                            </a>
+                                                                            <% } %>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <% } %>
+                                                        <% }); %>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <% } %>
+
+                                <!-- Completed Assessments Section -->
+                                <% if (completedVisits && completedVisits.length> 0) { %>
+                                    <div class="mt-3 text-center">
+                                        <button class="btn btn-outline-primary btn-sm" type="button"
+                                            data-bs-toggle="collapse" data-bs-target="#completedAssessmentsSection"
+                                            aria-expanded="false" aria-controls="completedAssessmentsSection">
+                                            <i class="fas fa-list me-1"></i>View Completed Assessments
+                                        </button>
+                                    </div>
+                                    <% } %>
+
+                                        <% if (completedVisits && completedVisits.length> 0) { %>
+                                            <div class="col-12 mt-4">
+                                                </br>
+                                                <div class="card h-100 collapse" id="completedAssessmentsSection">
+                                                    <div
+                                                        class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                                                        <h4 class="card-title mb-0">
+                                                            <i class="fas fa-check-circle me-2"></i>Completed
+                                                            Assessments
+                                                        </h4>
+                                                        <div class="d-flex align-items-center">
+                                                            <label for="completedFilter" class="text-white me-2 mb-0">
+                                                                <i class="fas fa-search me-1"></i>Filter by Name/SSN:
+                                                            </label>
+                                                            <input type="text" id="completedFilter"
+                                                                class="form-control form-control-sm"
+                                                                placeholder="Search..." style="width: 200px;">
+                                                        </div>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <p class="text-muted">Previously completed nursing assessments.
+                                                        </p>
+                                                        <div class="table-responsive">
+                                                            <table class="table table-hover mb-0"
+                                                                id="completedAssessmentsTable">
+                                                                <thead class="table-light">
+                                                                    <tr>
+                                                                        <th><i class="fas fa-calendar me-1"
+                                                                                aria-hidden="true"></i>Date</th>
+                                                                        <th><i class="fas fa-user me-1"
+                                                                                aria-hidden="true"></i>Patient</th>
+                                                                        <th><i class="fas fa-tasks me-1"
+                                                                                aria-hidden="true"></i>Status</th>
+                                                                        <th><i class="fas fa-cogs me-1"
+                                                                                aria-hidden="true"></i>Actions</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    <% completedVisits.forEach(visit=> { %>
+                                                                        <tr data-patient-name="<%= visit.patient_name.toLowerCase() %>"
+                                                                            data-patient-ssn="<%= visit.patient_ssn %>">
+                                                                            <td>
+                                                                                <div>
+                                                                                    <strong>
+                                                                                        <%= new
+                                                                                            Date(visit.visit_date).toLocaleDateString()
+                                                                                            %>
+                                                                                    </strong>
+                                                                                    <br>
+                                                                                    <small class="text-muted">
+                                                                                        <%= new
+                                                                                            Date(visit.visit_date).toLocaleTimeString()
+                                                                                            %>
+                                                                                    </small>
+                                                                                </div>
+                                                                            </td>
+                                                                            <td>
+                                                                                <div>
+                                                                                    <strong>
+                                                                                        <%= visit.patient_name %>
+                                                                                    </strong>
+                                                                                    <% if (visit.visit_source==='HL7' )
+                                                                                        { %>
+                                                                                        <span class="badge bg-info ms-1"
+                                                                                            title="Created from HL7 message">
+                                                                                            <i
+                                                                                                class="fas fa-network-wired me-1"></i>HL7
+                                                                                        </span>
+                                                                                        <% } %>
+                                                                                            <br>
+                                                                                            <small class="text-muted">
+                                                                                                SSN: <%=
+                                                                                                    visit.patient_ssn %>
+                                                                                                    | <%= visit.gender
+                                                                                                        %>,
+                                                                                                        <%= visit.calculated_age
+                                                                                                            %> years old
+                                                                                            </small>
+                                                                                </div>
+                                                                            </td>
+                                                                            <td>
+                                                                                <div class="assessment-status">
+                                                                                    <span class="badge bg-success">
+                                                                                        <i
+                                                                                            class="fas fa-check-circle me-1"></i>Completed
+                                                                                    </span>
+                                                                                    <% if (visit.nurse_signature) { %>
+                                                                                        <br><small
+                                                                                            class="text-success"><i
+                                                                                                class="fas fa-signature me-1"></i>Signed</small>
+                                                                                        <% } else { %>
+                                                                                            <br><small
+                                                                                                class="text-warning"><i
+                                                                                                    class="fas fa-signature me-1"></i>Unsigned</small>
+                                                                                            <% } %>
+                                                                                </div>
+                                                                            </td>
+                                                                            <td>
+                                                                                <div class="btn-group btn-group-sm"
+                                                                                    role="group">
+                                                                                    <a href="/nurse/assessment/<%= visit.visit_id %>"
+                                                                                        class="btn btn-outline-primary"
+                                                                                        title="View Assessment"
+                                                                                        aria-label="View assessment for <%= visit.patient_name %>">
+                                                                                        <i class="fas fa-eye"
+                                                                                            aria-hidden="true"></i> View
+                                                                                    </a>
+                                                                                </div>
+                                                                            </td>
+                                                                        </tr>
+                                                                        <% }); %>
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <% } %>
+                    </div>
+
+                    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+                    <script>
+                        // Utility function to parse HL7 date format (YYYYMMDD) or standard date formats
+                        function parseHL7Date(dateString) {
+                            if (!dateString || dateString === 'null') return null;
+
+                            // Handle HL7 date format (YYYYMMDD)
+                            if (dateString.length === 8 && /^\d{8}$/.test(dateString)) {
+                                const year = dateString.substring(0, 4);
+                                const month = dateString.substring(4, 6);
+                                const day = dateString.substring(6, 8);
+                                return new Date(`${year}-${month}-${day}`);
+                            }
+
+                            // Try standard date parsing
+                            const date = new Date(dateString);
+                            return isNaN(date.getTime()) ? null : date;
+                        }
+
+                        // Utility function to calculate age from date of birth
+                        function calculateAge(dateOfBirth) {
+                            const birthDate = parseHL7Date(dateOfBirth);
+                            if (!birthDate) return 'N/A';
+
+                            const today = new Date();
+                            let age = today.getFullYear() - birthDate.getFullYear();
+                            const monthDiff = today.getMonth() - birthDate.getMonth();
+
+                            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                                age--;
+                            }
+
+                            return age;
+                        }
+                    </script>
+                    <script>
+                        let selectedPatient = null;
+                        let searchTimeout = null;
+
+                        // Patient search input handler
+                        document.getElementById('patientSearch').addEventListener('input', function (e) {
+                            const query = e.target.value.trim();
+                            const resultsDiv = document.getElementById('autocompleteResults');
+                            const ssnSection = document.getElementById('ssnSection');
+                            const searchBtn = document.getElementById('searchBtn');
+                            const patientNotFoundMessage = document.getElementById('patientNotFoundMessage');
+
+                            // Hide patient not found message when user starts typing
+                            patientNotFoundMessage.classList.add('d-none');
+
+                            // Clear previous timeout
+                            if (searchTimeout) {
+                                clearTimeout(searchTimeout);
+                            }
+
+                            if (query.length < 2) {
+                                resultsDiv.style.display = 'none';
+                                ssnSection.style.display = 'none';
+                                searchBtn.disabled = true;
+                                selectedPatient = null;
+                                return;
+                            }
+
+                            // Debounce search
+                            searchTimeout = setTimeout(() => {
+                                console.log('Searching for SSN:', query);
+                                fetch(`/api/patients/search?q=${encodeURIComponent(query)}`)
+                                    .then(response => {
+                                        console.log('Response status:', response.status);
+                                        return response.json();
+                                    })
+                                    .then(patients => {
+                                        console.log('Received patients:', patients);
+                                        displayAutocompleteResults(patients, query);
+                                    })
+                                    .catch(error => {
+                                        console.error('Search error:', error);
+                                        resultsDiv.style.display = 'none';
+                                    });
+                            }, 300);
+                        });
+
+                        // Keyboard navigation for autocomplete
+                        document.getElementById('patientSearch').addEventListener('keydown', function (e) {
+                            const resultsDiv = document.getElementById('autocompleteResults');
+                            const items = resultsDiv.querySelectorAll('.autocomplete-item');
+                            let currentIndex = -1;
+
+                            // Find currently focused item
+                            items.forEach((item, index) => {
+                                if (item === document.activeElement) {
+                                    currentIndex = index;
+                                }
+                            });
+
+                            if (e.key === 'ArrowDown') {
+                                e.preventDefault();
+                                if (currentIndex < items.length - 1) {
+                                    items[currentIndex + 1].focus();
+                                } else if (items.length > 0) {
+                                    items[0].focus();
+                                }
+                            } else if (e.key === 'ArrowUp') {
+                                e.preventDefault();
+                                if (currentIndex > 0) {
+                                    items[currentIndex - 1].focus();
+                                } else if (items.length > 0) {
+                                    items[items.length - 1].focus();
+                                }
+                            } else if (e.key === 'Enter' && currentIndex >= 0) {
+                                e.preventDefault();
+                                items[currentIndex].click();
+                            } else if (e.key === 'Escape') {
+                                resultsDiv.style.display = 'none';
+                                this.focus();
+                            }
+                        });
+
+                        function displayAutocompleteResults(patients, query) {
+                            console.log('Displaying results for patients:', patients);
+                            const resultsDiv = document.getElementById('autocompleteResults');
+                            const ssnSection = document.getElementById('ssnSection');
+                            const searchBtn = document.getElementById('searchBtn');
+                            const patientNotFoundMessage = document.getElementById('patientNotFoundMessage');
+
+                            if (patients.length === 0) {
+                                console.log('No patients found, showing error message');
+                                // Hide autocomplete results
+                                resultsDiv.style.display = 'none';
+                                ssnSection.style.display = 'none';
+                                searchBtn.disabled = true;
+
+                                // Show compact patient not found message beside button
+                                patientNotFoundMessage.classList.remove('d-none');
+                                return;
+                            }
+
+                            console.log('Generating HTML for', patients.length, 'patients');
+                            // Hide patient not found message if patients are found
+                            patientNotFoundMessage.classList.add('d-none');
+
+                            resultsDiv.innerHTML = patients.map(patient => `
+                <div class="autocomplete-item" onclick="selectPatient('${patient.ssn}', '${patient.full_name}')" tabindex="0" role="option">
+                    <div class="patient-name">${patient.full_name}</div>
+                    <div class="patient-details">
+                        SSN: ${patient.ssn} | Medical #: ${patient.medical_number || 'N/A'}
+                    </div>
+                </div>
+            `).join('');
+
+                            resultsDiv.style.display = 'block';
+                            ssnSection.style.display = 'none';
+                            searchBtn.disabled = true;
+                        }
+
+                        function selectPatient(ssn, name) {
+                            selectedPatient = { ssn, name };
+                            document.getElementById('patientSearch').value = ssn;
+                            document.getElementById('patientName').value = name;
+                            document.getElementById('ssn').value = ssn;
+                            document.getElementById('autocompleteResults').style.display = 'none';
+                            document.getElementById('ssnSection').style.display = 'block';
+                            document.getElementById('searchBtn').disabled = false;
+                            // Hide patient not found message when patient is selected
+                            document.getElementById('patientNotFoundMessage').classList.add('d-none');
+                        }
+
+                        // Auto-format SSN search input (allow only digits, limit to 14)
+                        document.getElementById('patientSearch').addEventListener('input', function (e) {
+                            let value = e.target.value.replace(/\D/g, ''); // Remove any non-digit characters
+                            // Limit to 14 digits
+                            if (value.length > 14) {
+                                value = value.slice(0, 14);
+                            }
+                            e.target.value = value;
+                        });
+
+                        // Auto-format SSN input (allow only digits, limit to 14)
+                        document.getElementById('ssn').addEventListener('input', function (e) {
+                            let value = e.target.value.replace(/\D/g, ''); // Remove any non-digit characters
+                            // Limit to 14 digits
+                            if (value.length > 14) {
+                                value = value.slice(0, 14);
+                            }
+                            e.target.value = value;
+                        });
+
+                        // Close autocomplete when clicking outside
+                        document.addEventListener('click', function (e) {
+                            const resultsDiv = document.getElementById('autocompleteResults');
+                            const searchInput = document.getElementById('patientSearch');
+
+                            if (!resultsDiv.contains(e.target) && e.target !== searchInput) {
+                                resultsDiv.style.display = 'none';
+                            }
+                        });
+
+                        // Handle Add Patient button click
+                        document.getElementById('addPatientBtn').addEventListener('click', function (e) {
+                            e.preventDefault();
+                            const searchValue = document.getElementById('patientSearch').value.trim();
+                            if (searchValue) {
+                                window.location.href = `/nurse/add-patient?ssn=${encodeURIComponent(searchValue)}`;
+                            } else {
+                                window.location.href = '/nurse/add-patient';
+                            }
+                        });
+
+                        // Assessment filter functionality for cards
+                        document.getElementById('assessmentFilter').addEventListener('input', function (e) {
+                            const filterValue = e.target.value.toLowerCase().trim();
+                            const cards = document.querySelectorAll('#assessmentsCards .assessment-card');
+
+                            cards.forEach(card => {
+                                const patientName = card.getAttribute('data-patient-name') || '';
+                                const patientSsn = card.getAttribute('data-patient-ssn') || '';
+
+                                const matchesName = patientName.includes(filterValue);
+                                const matchesSsn = patientSsn.includes(filterValue);
+
+                                if (filterValue === '' || matchesName || matchesSsn) {
+                                    card.style.display = '';
+                                } else {
+                                    card.style.display = 'none';
+                                }
+                            });
+                        });
+
+                        // Completed assessments filter functionality
+                        document.getElementById('completedFilter').addEventListener('input', function (e) {
+                            const filterValue = e.target.value.toLowerCase().trim();
+                            const table = document.getElementById('completedAssessmentsTable');
+                            const rows = table.querySelectorAll('tbody tr');
+
+                            rows.forEach(row => {
+                                const patientName = row.getAttribute('data-patient-name') || '';
+                                const patientSsn = row.getAttribute('data-patient-ssn') || '';
+
+                                const matchesName = patientName.includes(filterValue);
+                                const matchesSsn = patientSsn.includes(filterValue);
+
+                                if (filterValue === '' || matchesName || matchesSsn) {
+                                    row.style.display = '';
+                                } else {
+                                    row.style.display = 'none';
+                                }
+                            });
+                        });
+
+                        // Clear completed filter when Escape key is pressed
+                        document.getElementById('completedFilter').addEventListener('keydown', function (e) {
+                            if (e.key === 'Escape') {
+                                this.value = '';
+                                this.dispatchEvent(new Event('input'));
+                                this.blur();
+                            }
+                        });
+                    </script>
+</body>
+
+</html>

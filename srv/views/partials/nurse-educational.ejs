@@ -1,0 +1,57 @@
+<!-- Educational Needs -->
+<div class="form-section">
+    <h3><i class="fas fa-graduation-cap me-2" aria-hidden="true"></i>Educational Needs</h3>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="needs_medication_education" <%=assessment &&
+                    assessment.needs_medication_education ? 'checked' : '' %> aria-label="Patient needs medication
+                education">
+                <label class="form-check-label">Medication Education</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="needs_diet_nutrition_education" <%=assessment &&
+                    assessment.needs_diet_nutrition_education ? 'checked' : '' %> aria-label="Patient needs diet and
+                nutrition education">
+                <label class="form-check-label">Diet & Nutrition Education</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="needs_medical_equipment_education" <%=assessment
+                    && assessment.needs_medical_equipment_education ? 'checked' : '' %> aria-label="Patient needs
+                medical equipment education">
+                <label class="form-check-label">Medical Equipment Education</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="needs_rehabilitation_education" <%=assessment &&
+                    assessment.needs_rehabilitation_education ? 'checked' : '' %> aria-label="Patient needs
+                rehabilitation education">
+                <label class="form-check-label">Rehabilitation Education</label>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="needs_drug_interaction_education" <%=assessment &&
+                    assessment.needs_drug_interaction_education ? 'checked' : '' %> aria-label="Patient needs drug
+                interaction education">
+                <label class="form-check-label">Drug Interaction Education</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="needs_pain_symptom_education" <%=assessment &&
+                    assessment.needs_pain_symptom_education ? 'checked' : '' %> aria-label="Patient needs pain symptom
+                education">
+                <label class="form-check-label">Pain Symptom Education</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="needs_fall_prevention_education" <%=assessment &&
+                    assessment.needs_fall_prevention_education ? 'checked' : '' %> aria-label="Patient needs fall
+                prevention education">
+                <label class="form-check-label">Fall Prevention Education</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="needs_other_education" <%=assessment &&
+                    assessment.needs_other_education ? 'checked' : '' %> aria-label="Patient needs other education">
+                <label class="form-check-label">Other</label>
+            </div>
+        </div>
+    </div>
+</div>

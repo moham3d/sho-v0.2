@@ -1,0 +1,456 @@
+<%
+    const patientData = visit || {};
+    const nursingData = nursingAssessment || {};
+    const radiologyData = radiologyAssessment || {};
+    const dobValue = patientData.date_of_birth ? new Date(patientData.date_of_birth) : null;
+    const autoAge = dobValue ? Math.max(0, Math.floor((Date.now() - dobValue.getTime()) / (365.25 * 24 * 60 * 60 * 1000))) : '';
+    const formattedDob = dobValue ? dobValue.toISOString().split('T')[0] : '';
+    const todayDate = new Date().toISOString().split('T')[0];
+%>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Assessment - Al-Shorouk Radiology Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="/css/custom.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f5f7fa;
+        }
+        .form-wrapper {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .form-section {
+            margin-bottom: 1.75rem;
+        }
+        .section-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .section-title h3 {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #007bff;
+        }
+        .section-title small {
+            color: #6c757d;
+        }
+        .info-card {
+            border-radius: 1rem;
+            border: 1px solid #dee2e6;
+            background: linear-gradient(120deg, rgba(0, 123, 255, 0.07), rgba(13, 110, 253, 0.05));
+        }
+        .signature-preview img {
+            max-height: 120px;
+            border: 1px solid #dee2e6;
+            border-radius: 0.5rem;
+            background: #ffffff;
+            padding: 0.25rem;
+        }
+        .assessment-card {
+            background: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .assessment-header {
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        .assessment-header h4 {
+            color: #007bff;
+            margin: 0;
+        }
+        .assessment-header small {
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <%- include('navigation', { currentPage: 'radiologist-dashboard' }) %>
+
+    <main class="container py-4" id="main-content" role="main">
+        <div class="form-wrapper">
+            <header class="mb-4 text-center">
+                <h1 class="fw-bold text-primary mb-1">
+                    <i class="fas fa-eye me-2" aria-hidden="true"></i>
+                    View Completed Assessment
+                    <small class="d-block text-muted">عرض التقييم المكتمل</small>
+                </h1>
+                <p class="text-muted mb-0">Review the completed nursing and radiology assessments for this visit</p>
+            </header>
+
+            <% if (patientData && patientData.patient_name) { %>
+            <section class="card shadow-sm info-card mb-4">
+                <div class="card-body">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+                        <div>
+                            <h2 class="h5 fw-bold mb-1"><i class="fas fa-user me-2"></i>Patient Overview <span class="text-muted">بيانات المريض</span></h2>
+                            <p class="mb-0 text-muted">Visit ID: <strong><%= patientData.visit_id || 'N/A' %></strong></p>
+                        </div>
+                        <div class="text-end">
+                            <p class="mb-1"><strong>Visit Date:</strong> <%= patientData.visit_date ? new Date(patientData.visit_date).toLocaleDateString() : 'N/A' %></p>
+                            <p class="text-muted mb-0"><i class="far fa-calendar-alt me-1"></i>Status: <%= patientData.visit_status || 'Unknown' %></p>
+                        </div>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="p-3 bg-white border rounded-3 h-100">
+                                <p class="mb-1 text-muted">Patient Name / الاسم</p>
+                                <h3 class="h6 fw-semibold mb-0"><%= patientData.patient_name %></h3>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 bg-white border rounded-3 h-100">
+                                <p class="mb-1 text-muted">Medical Number / الرقم الطبي</p>
+                                <h3 class="h6 fw-semibold mb-0"><%= patientData.medical_number || '—' %></h3>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 bg-white border rounded-3 h-100">
+                                <p class="mb-1 text-muted">SSN / الرقم القومي</p>
+                                <h3 class="h6 fw-semibold mb-0"><%= patientData.patient_ssn %></h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <% } %>
+
+            <!-- Nursing Assessment -->
+            <% if (nursingData && nursingData.assessment_id) { %>
+            <div class="assessment-card">
+                <div class="assessment-header">
+                    <h4><i class="fas fa-user-nurse me-2"></i>Nursing Assessment</h4>
+                    <small>Submitted by <%= nursingData.nurse_name || 'Unknown' %> on <%= nursingData.nursing_submitted_at ? new Date(nursingData.nursing_submitted_at).toLocaleString() : 'Unknown' %></small>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <h6>Basic Information</h6>
+                        <p><strong>Mode of Arrival:</strong> <%= nursingData.mode_of_arrival || 'Not specified' %></p>
+                        <p><strong>Age:</strong> <%= nursingData.age || 'Not specified' %></p>
+                        <p><strong>Language:</strong> <%= nursingData.language_spoken || 'Not specified' %></p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Vital Signs</h6>
+                        <p><strong>Temperature:</strong> <%= nursingData.temperature_celsius ? nursingData.temperature_celsius + '°C' : 'Not measured' %></p>
+                        <p><strong>Pulse:</strong> <%= nursingData.pulse_bpm ? nursingData.pulse_bpm + ' BPM' : 'Not measured' %></p>
+                        <p><strong>Blood Pressure:</strong> <%= nursingData.blood_pressure_systolic && nursingData.blood_pressure_diastolic ? nursingData.blood_pressure_systolic + '/' + nursingData.blood_pressure_diastolic + ' mmHg' : 'Not measured' %></p>
+                    </div>
+                </div>
+
+                <% if (nursingData.nurse_signature) { %>
+                <div class="mt-3">
+                    <h6>Nurse Signature</h6>
+                    <div id="nurseSignatureContainer" class="signature-preview" data-signature="<%= nursingData.nurse_signature %>">
+                        <!-- Signature will be rendered here by JavaScript -->
+                    </div>
+                </div>
+                <% } %>
+            </div>
+            <% } %>
+
+            <!-- Radiology Assessment -->
+            <% if (radiologyData && radiologyData.id) { %>
+            <div class="assessment-card">
+                <div class="assessment-header">
+                    <h4><i class="fas fa-x-ray me-2"></i>Radiology Assessment</h4>
+                    <small>Submitted by <%= radiologyData.radiologist_name || 'Unknown' %> on <%= radiologyData.created_at ? new Date(radiologyData.created_at).toLocaleString() : 'Unknown' %></small>
+                    <span class="badge bg-<%= radiologyData.form_status === 'completed' ? 'success' : 'secondary' %> ms-2"><%= radiologyData.form_status || 'Unknown' %></span>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <h6>Examination Details</h6>
+                        <p><strong>Form Type:</strong> <%= radiologyData.form_type ? radiologyData.form_type.toUpperCase() : 'Not specified' %></p>
+                        <p><strong>Patient Complaint:</strong> <%= radiologyData.patient_complaint || 'Not specified' %></p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Technical Parameters</h6>
+                        <p><strong>CTDIvol:</strong> <%= radiologyData.ctd1vol || 'Not specified' %></p>
+                        <p><strong>DLP:</strong> <%= radiologyData.dlp || 'Not specified' %></p>
+                        <p><strong>kV:</strong> <%= radiologyData.kv || 'Not specified' %></p>
+                        <p><strong>mAs:</strong> <%= radiologyData.mas || 'Not specified' %></p>
+                    </div>
+                </div>
+
+                <!-- Medical History -->
+                <div class="mt-4">
+                    <h6>Medical History</h6>
+                    <div class="row g-3">
+                        <% if (radiologyData.has_chronic_disease) { %>
+                        <div class="col-md-6">
+                            <p><strong>Chronic Diseases:</strong> <%= radiologyData.chronic_disease_details || 'Yes' %></p>
+                        </div>
+                        <% } %>
+                        <% if (radiologyData.current_medications) { %>
+                        <div class="col-md-6">
+                            <p><strong>Current Medications:</strong> <%= radiologyData.current_medications %></p>
+                        </div>
+                        <% } %>
+                        <% if (radiologyData.has_allergy) { %>
+                        <div class="col-12">
+                            <p><strong>Allergies:</strong>
+                                <% if (radiologyData.allergy_medication) { %>Medication: <%= radiologyData.allergy_medication_details || 'Yes' %>; <% } %>
+                                <% if (radiologyData.allergy_food) { %>Food: <%= radiologyData.allergy_food_details || 'Yes' %>; <% } %>
+                                <% if (radiologyData.allergy_others) { %>Others: <%= radiologyData.allergy_others_details || 'Yes' %>; <% } %>
+                            </p>
+                        </div>
+                        <% } %>
+                        <% if (radiologyData.has_previous_operations) { %>
+                        <div class="col-md-6">
+                            <p><strong>Previous Operations:</strong> <%= radiologyData.operation_details || 'Yes' %>
+                                <% if (radiologyData.operation_date) { %>(<%= radiologyData.operation_date %>)<% } %>
+                                <% if (radiologyData.operation_reason) { %> - <%= radiologyData.operation_reason %><% } %>
+                            </p>
+                        </div>
+                        <% } %>
+                        <% if (radiologyData.has_tumor_history) { %>
+                        <div class="col-md-6">
+                            <p><strong>Tumor History:</strong> <%= radiologyData.tumor_location || 'Unknown' %> - <%= radiologyData.tumor_type || 'Unknown type' %></p>
+                        </div>
+                        <% } %>
+                        <% if (radiologyData.has_previous_investigations) { %>
+                        <div class="col-md-6">
+                            <p><strong>Previous Investigations:</strong> <%= radiologyData.previous_investigation_type || 'Unknown' %>
+                                <% if (radiologyData.previous_investigation_date) { %>(<%= radiologyData.previous_investigation_date %>)<% } %>
+                            </p>
+                        </div>
+                        <% } %>
+                    </div>
+                </div>
+
+                <!-- Current Symptoms -->
+                <div class="mt-4">
+                    <h6>Current Symptoms</h6>
+                    <div class="row g-3">
+                        <% if (radiologyData.has_swelling) { %>
+                        <div class="col-md-6">
+                            <p><strong>Swelling:</strong> <%= radiologyData.swelling_location || 'Location not specified' %></p>
+                        </div>
+                        <% } %>
+                        <% if (radiologyData.has_fever) { %>
+                        <div class="col-md-6">
+                            <p><strong>Fever:</strong> Yes</p>
+                        </div>
+                        <% } %>
+                        <% if (radiologyData.has_fall_risk_medications) { %>
+                        <div class="col-md-6">
+                            <p><strong>Fall Risk Medications:</strong> <%= radiologyData.fall_risk_medication_details || 'Yes' %></p>
+                        </div>
+                        <% } %>
+                    </div>
+                </div>
+
+                <!-- Women's Health (if applicable) -->
+                <% if (patientData.gender === 'female') { %>
+                <div class="mt-4">
+                    <h6>Women's Health</h6>
+                    <div class="row g-3">
+                        <% if (radiologyData.is_pregnant) { %>
+                        <div class="col-md-6">
+                            <p><strong>Pregnancy:</strong> Yes</p>
+                        </div>
+                        <% } %>
+                        <% if (radiologyData.is_lactating) { %>
+                        <div class="col-md-6">
+                            <p><strong>Lactation:</strong> Yes</p>
+                        </div>
+                        <% } %>
+                    </div>
+                </div>
+                <% } %>
+
+                <!-- Medical Devices and Implants -->
+                <div class="mt-4">
+                    <h6>Medical Devices & Implants</h6>
+                    <div class="row g-3">
+                        <% if (radiologyData.has_pacemaker) { %>
+                        <div class="col-md-6">
+                            <p><strong class="text-danger">Pacemaker:</strong> Yes</p>
+                        </div>
+                        <% } %>
+                        <% if (radiologyData.has_cochlear_implant) { %>
+                        <div class="col-md-6">
+                            <p><strong class="text-danger">Cochlear Implant:</strong> Yes</p>
+                        </div>
+                        <% } %>
+                        <% if (radiologyData.has_aneurysmal_clips) { %>
+                        <div class="col-md-6">
+                            <p><strong class="text-danger">Aneurysmal Clips:</strong> Yes</p>
+                        </div>
+                        <% } %>
+                        <% if (radiologyData.has_intraocular_foreign_body) { %>
+                        <div class="col-md-6">
+                            <p><strong class="text-danger">Intraocular Foreign Body:</strong> Yes</p>
+                        </div>
+                        <% } %>
+                        <% if (radiologyData.has_surgical_implants) { %>
+                        <div class="col-12">
+                            <p><strong>Surgical Implants:</strong> <%= radiologyData.surgical_implant_details || 'Yes' %></p>
+                        </div>
+                        <% } %>
+                        <% if (radiologyData.implant_details) { %>
+                        <div class="col-12">
+                            <p><strong>Additional Implant Details:</strong> <%= radiologyData.implant_details %></p>
+                        </div>
+                        <% } %>
+                    </div>
+                </div>
+
+                <!-- Gypsum Splint -->
+                <% if (radiologyData.has_gypsum_splint) { %>
+                <div class="mt-4">
+                    <h6>Gypsum Splint</h6>
+                    <p><strong>Gypsum Splint Present:</strong> Yes</p>
+                    <% if (radiologyData.gypsum_splint_details) { %>
+                    <p><strong>Details:</strong> <%= radiologyData.gypsum_splint_details %></p>
+                    <% } %>
+                    <p class="text-muted small"><%= radiologyData.gypsum_splint_note || 'في حالة وجود جبيرة الجد من احضار صور الأشعة قبل تركيب الجبيره' %></p>
+                </div>
+                <% } %>
+
+                <!-- Critical Results -->
+                <% if (radiologyData.has_critical_result) { %>
+                <div class="mt-4">
+                    <h6 class="text-danger">Critical Results</h6>
+                    <div class="border border-danger rounded p-3 bg-light">
+                        <% if (radiologyData.critical_result_details) { %>
+                        <p><strong>Critical Finding:</strong> <%= radiologyData.critical_result_details %></p>
+                        <% } %>
+                        <% if (radiologyData.critical_result_notified) { %>
+                        <p><strong>Notified:</strong> <%= radiologyData.critical_result_notified_to || 'Unknown' %></p>
+                        <% } %>
+                        <% if (radiologyData.critical_result_recorded_in_book) { %>
+                        <p><strong>Recorded in Book:</strong> Yes</p>
+                        <% } %>
+                    </div>
+                </div>
+                <% } %>
+
+                <!-- Notes -->
+                <% if (radiologyData.additional_notes || radiologyData.radiologist_notes || radiologyData.technician_notes) { %>
+                <div class="mt-4">
+                    <h6>Notes</h6>
+                    <% if (radiologyData.additional_notes) { %>
+                    <p><strong>Additional Notes:</strong> <%= radiologyData.additional_notes %></p>
+                    <% } %>
+                    <% if (radiologyData.radiologist_notes) { %>
+                    <p><strong>Radiologist Notes:</strong> <%= radiologyData.radiologist_notes %></p>
+                    <% } %>
+                    <% if (radiologyData.technician_notes) { %>
+                    <p><strong>Technician Notes:</strong> <%= radiologyData.technician_notes %></p>
+                    <% } %>
+                </div>
+                <% } %>
+
+                <!-- Signatures -->
+                <div class="mt-4">
+                    <h6>Signatures</h6>
+                    <div class="row g-3">
+                        <% if (radiologyData.patient_signature) { %>
+                        <div class="col-md-6">
+                            <h6>Patient Signature</h6>
+                            <div id="patientSignatureContainer" class="signature-preview border rounded p-2" data-signature="<%= radiologyData.patient_signature %>">
+                                <!-- Signature will be rendered here by JavaScript -->
+                            </div>
+                        </div>
+                        <% } %>
+                        <% if (radiologyData.radiologist_signature) { %>
+                        <div class="col-md-6">
+                            <h6>Radiologist Signature</h6>
+                            <div id="radiologistSignatureContainer" class="signature-preview border rounded p-2" data-signature="<%= radiologyData.radiologist_signature %>">
+                                <!-- Signature will be rendered here by JavaScript -->
+                            </div>
+                        </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+            <% } %>
+
+            <div class="text-center mt-4">
+                <a href="/radiologist" class="btn btn-primary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Ensure document is available before running client-side code
+        if (typeof document !== 'undefined') {
+            function displaySignature(signatureData) {
+                if (!signatureData) {
+                    return '';
+                }
+
+                if (typeof signatureData === 'string') {
+                    const trimmed = signatureData.trim();
+
+                    if (trimmed.startsWith('<svg')) {
+                        return trimmed.replace('<svg', '<svg style="max-height: 120px; max-width: 100%; width: auto; height: auto; object-fit: contain; background: white; border: 1px solid #dee2e6; border-radius: 5px; padding: 0.25rem;" class="img-fluid"');
+                    }
+
+                    if (trimmed.startsWith('data:image/svg+xml')) {
+                        try {
+                            const base64Data = trimmed.split(',')[1];
+                            const svgContent = atob(base64Data);
+                            return svgContent.replace('<svg', '<svg style="max-height: 120px; max-width: 100%; width: auto; height: auto; object-fit: contain; background: white; border: 1px solid #dee2e6; border-radius: 5px; padding: 0.25rem;" class="img-fluid"');
+                        } catch (e) {
+                            // Fallback to img tag if decoding fails
+                            return `<img src="${trimmed}" alt="Signature" class="img-fluid" style="max-height: 120px; max-width: 100%; width: auto; height: auto; object-fit: contain;">`;
+                        }
+                    }
+
+                    // PNG or other image formats already encoded as data URL or URL
+                    if (trimmed.startsWith('data:image') || trimmed.startsWith('http')) {
+                        return `<img src="${trimmed}" alt="Signature" class="img-fluid" style="max-height: 120px; max-width: 100%; width: auto; height: auto; object-fit: contain;">`;
+                    }
+
+                    if (trimmed) {
+                        return `<div class="border rounded p-2 bg-white" style="max-height: 120px; overflow: auto;" aria-label="Signature preview">${trimmed}</div>`;
+                    }
+                }
+
+                return '';
+            }
+
+            // Apply signatures on page load
+            document.addEventListener('DOMContentLoaded', function() {
+                // Display nurse signature
+                const nurseSignatureContainer = document.getElementById('nurseSignatureContainer');
+                if (nurseSignatureContainer && nurseSignatureContainer.dataset.signature) {
+                    nurseSignatureContainer.innerHTML = displaySignature(nurseSignatureContainer.dataset.signature);
+                }
+
+                // Display patient signature
+                const patientSignatureContainer = document.getElementById('patientSignatureContainer');
+                if (patientSignatureContainer && patientSignatureContainer.dataset.signature) {
+                    patientSignatureContainer.innerHTML = displaySignature(patientSignatureContainer.dataset.signature);
+                }
+
+                // Display radiologist signature
+                const radiologistSignatureContainer = document.getElementById('radiologistSignatureContainer');
+                if (radiologistSignatureContainer && radiologistSignatureContainer.dataset.signature) {
+                    radiologistSignatureContainer.innerHTML = displaySignature(radiologistSignatureContainer.dataset.signature);
+                }
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1024 @@
+<% const extraHead=` <style>
+    /* Page-specific wrapper styles */
+    .form-wrapper {
+    max-width: 1100px;
+    margin: 0 auto;
+    }
+
+    canvas {
+    display: block;
+    margin: 0 auto;
+    }
+    </style>
+    `;
+    %>
+    <%- include('partials/layout-header', { title: 'Nursing Assessment Form - Al-Shorouk Radiology Management System' ,
+        currentPage: 'assessment' , extraHead: extraHead, containerClass: 'container' }) %>
+        <div class="form-wrapper">
+            <header class="mb-4 text-center">
+                <h1 class="fw-bold text-primary mb-1">
+                    <i class="fas fa-user-nurse me-2" aria-hidden="true"></i>
+                    Nursing Assessment Form
+                    <small class="d-block text-muted">نموذج تقييم التمريض - SH.MR.FRM.05</small>
+                </h1>
+                <p class="text-muted mb-0">Complete the comprehensive patient assessment form below قبل إجراء الفحص
+                    الشعاعي.</p>
+            </header>
+            <% if (visit && visit.full_name) { %>
+                <section class="card shadow-sm info-card mb-4">
+                    <div class="card-body">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+                            <div>
+                                <h2 class="h5 fw-bold mb-1"><i class="fas fa-user me-2"></i>Patient Overview <span
+                                        class="text-muted">بيانات المريض</span></h2>
+                                <p class="mb-0 text-muted">Visit ID: <strong>
+                                        <%= visit.visit_id || 'N/A' %>
+                                    </strong></p>
+                            </div>
+                            <div class="text-end">
+                                <p class="mb-1"><strong>Nurse:</strong>
+                                    <%= user.fullName || user.full_name || '—' %>
+                                </p>
+                                <p class="text-muted mb-0"><i class="far fa-calendar-alt me-1"></i>Assessment Date:
+                                    <%= new Date().toISOString().split('T')[0] %>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="p-3 bg-white border rounded-3 h-100">
+                                    <p class="mb-1 text-muted">Patient Name / الاسم</p>
+                                    <h3 class="h6 fw-semibold mb-0">
+                                        <%= visit.full_name %>
+                                    </h3>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-3 bg-white border rounded-3 h-100">
+                                    <p class="mb-1 text-muted">Medical Number / الرقم الطبي</p>
+                                    <h3 class="h6 fw-semibold mb-0">
+                                        <%= visit.medical_number || '—' %>
+                                    </h3>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-3 bg-white border rounded-3 h-100">
+                                    <p class="mb-1 text-muted">SSN / الرقم القومي</p>
+                                    <h3 class="h6 fw-semibold mb-0">
+                                        <%= visit.patient_ssn %>
+                                    </h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <% } %>
+                    <form id="nurseForm" action="/submit-nurse-form" method="POST">
+                        <!-- Hidden fields -->
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <input type="hidden" name="visit_id" value="<%= visit.visit_id %>">
+                        <!-- Basic Assessment Info -->
+                        <div class="form-section">
+                            <div class="section-title">
+                                <h3><i class="fas fa-info-circle me-2" aria-hidden="true"></i>Basic Assessment
+                                    Information</h3>
+                                <small>معلومات التقييم الأساسية</small>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Mode of Arrival: حالة الوصول</label>
+                                    <select class="form-select" name="mode_of_arrival" required
+                                        aria-label="Select patient's mode of arrival">
+                                        <option value="walking" <%=assessment && assessment.mode_of_arrival==='walking'
+                                            ? 'selected' : '' %>>Walking -
+                                            مشي</option>
+                                        <option value="ambulatory" <%=assessment &&
+                                            assessment.mode_of_arrival==='ambulatory' ? 'selected' : '' %>
+                                            >Ambulatory - متحرك</option>
+                                        <option value="wheelchair" <%=assessment &&
+                                            assessment.mode_of_arrival==='wheelchair' ? 'selected' : '' %>
+                                            >Wheelchair - كرسي متحرك</option>
+                                        <option value="stretcher" <%=assessment &&
+                                            assessment.mode_of_arrival==='stretcher' ? 'selected' : '' %>>Stretcher
+                                            - نقالة</option>
+                                        <option value="other" <%=assessment && assessment.mode_of_arrival==='other'
+                                            ? 'selected' : '' %>>Other - أخرى</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Age: العمر</label>
+                                    <input type="number" class="form-control" name="age" id="ageField" min="0" max="150"
+                                        required value="<%= assessment ? assessment.age : '' %>"
+                                        aria-label="Patient's age in years" aria-describedby="ageHelp">
+                                    <div id="age_error" class="invalid-feedback" style="display: none;"></div>
+                                    <small class="text-muted" id="ageHelp">Auto-calculated from patient's date of
+                                        birth</small>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Chief Complaint (الشكوي الحالية)</label>
+                                    <textarea class="form-control" name="chief_complaint" rows="3" required
+                                        aria-label="Patient's chief complaint in Arabic and English"><%= assessment ? assessment.chief_complaint : '' %></textarea>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Accompanied by: المرافق </label>
+                                    <select class="form-select" name="accompanied_by"
+                                        aria-label="Person accompanying the patient">
+                                        <option value="">Select...</option>
+                                        <option value="spouse" <%=assessment && assessment.accompanied_by==='spouse'
+                                            ? 'selected' : '' %>>Spouse - الزوج</option>
+                                        <option value="relative" <%=assessment && assessment.accompanied_by==='relative'
+                                            ? 'selected' : '' %>>Relative -
+                                            قريب</option>
+                                        <option value="other" <%=assessment && assessment.accompanied_by==='other'
+                                            ? 'selected' : '' %>>Other - أخرى</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Language Spoken: اللغة</label>
+                                    <select class="form-select" name="language_spoken"
+                                        aria-label="Primary language spoken by patient">
+                                        <option value="arabic" <%=(!assessment || assessment.language_spoken==='arabic'
+                                            ) ? 'selected' : '' %>>Arabic
+                                        </option>
+                                        <option value="english" <%=assessment && assessment.language_spoken==='english'
+                                            ? 'selected' : '' %>>English
+                                        </option>
+                                        <option value="other" <%=assessment && assessment.language_spoken==='other'
+                                            ? 'selected' : '' %>>Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Vital Signs -->
+                        <%- include('partials/nurse-vital-signs') %>
+
+                            <!-- Psychosocial Assessment -->
+                            <%- include('partials/nurse-psychosocial') %>
+
+                                <!-- Nutritional Screening -->
+                                <%- include('partials/nurse-nutritional') %>
+
+                                    <!-- Functional Assessment -->
+                                    <%- include('partials/nurse-functional') %>
+
+                                        <!-- Pain Assessment -->
+                                        <%- include('partials/nurse-pain') %>
+
+                                            <!-- Morse Fall Scale Assessment -->
+                                            <%- include('partials/nurse-morse-fall') %>
+
+
+                                                <!-- Pediatric Fall Risk Assessment -->
+                                                <%- include('partials/nurse-pediatric-fall') %>
+
+
+                                                    <!-- Elderly Assessment Evaluation -->
+                                                    <%- include('partials/nurse-elderly-assessment') %>
+
+
+
+                                                        <!-- Educational Needs -->
+                                                        <%- include('partials/nurse-educational') %>
+
+                                                            <!-- Visit Documents -->
+                                                            <div class="form-section" id="documentsSection">
+                                                                <div class="section-title">
+                                                                    <h3><i class="fas fa-file-medical me-2"
+                                                                            aria-hidden="true"></i>Visit Documents</h3>
+                                                                    <small>مستندات الزيارة</small>
+                                                                </div>
+                                                                <div class="row g-3">
+                                                                    <div class="col-12">
+                                                                        <p class="text-muted mb-3">Upload relevant
+                                                                            medical documents for this visit (lab
+                                                                            reports, referrals, previous records, etc.)
+                                                                        </p>
+                                                                        <div class="card">
+                                                                            <div class="card-body">
+                                                                                <div class="mb-3">
+                                                                                    <label class="form-label">Select
+                                                                                        Files</label>
+                                                                                    <input type="file"
+                                                                                        class="form-control"
+                                                                                        id="visitDocuments"
+                                                                                        name="documents" multiple
+                                                                                        accept=".pdf,.jpg,.jpeg,.png"
+                                                                                        aria-label="Upload visit documents">
+                                                                                    <div class="form-text">
+                                                                                        <i
+                                                                                            class="fas fa-info-circle me-1"></i>
+                                                                                        Max 5 files | 10MB per file |
+                                                                                        Accepted: PDF, JPG, PNG | Images
+                                                                                        will
+                                                                                        be auto-converted to scanned B&W
+                                                                                        format
+                                                                                    </div>
+                                                                                </div>
+
+                                                                                <!-- File Preview -->
+                                                                                <div id="documentPreview" class="mt-3">
+                                                                                </div>
+
+                                                                                <!-- Document Type & Description -->
+                                                                                <div class="row g-3 mt-2"
+                                                                                    id="documentMetadata"
+                                                                                    style="display: none;">
+                                                                                    <div class="col-md-6">
+                                                                                        <label
+                                                                                            class="form-label">Document
+                                                                                            Type</label>
+                                                                                        <select class="form-select"
+                                                                                            id="documentType">
+                                                                                            <option value="lab_report">
+                                                                                                Lab Report</option>
+                                                                                            <option
+                                                                                                value="medical_record">
+                                                                                                Previous Medical Record
+                                                                                            </option>
+                                                                                            <option value="referral">
+                                                                                                Referral Letter</option>
+                                                                                            <option value="imaging">
+                                                                                                Previous Imaging
+                                                                                            </option>
+                                                                                            <option
+                                                                                                value="prescription">
+                                                                                                Prescription</option>
+                                                                                            <option value="consent">
+                                                                                                Consent Form</option>
+                                                                                            <option value="other">Other
+                                                                                            </option>
+                                                                                        </select>
+                                                                                    </div>
+                                                                                    <div class="col-md-6">
+                                                                                        <label
+                                                                                            class="form-label">Description
+                                                                                            (Optional)</label>
+                                                                                        <input type="text"
+                                                                                            class="form-control"
+                                                                                            id="documentDescription"
+                                                                                            placeholder="Brief description of the documents">
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <!-- Nurse Signature -->
+                                                            <div class="form-section" id="signatureSection">
+                                                                <div class="section-title">
+                                                                    <h3><i class="fas fa-signature me-2"
+                                                                            aria-hidden="true"></i>Nurse Signature</h3>
+                                                                    <small>توقيع الممرض</small>
+                                                                </div>
+                                                                <div class="row g-3">
+                                                                    <div class="col-12">
+                                                                        <p class="text-muted mb-3">Click the button
+                                                                            below to sign and submit this nursing
+                                                                            assessment.</p>
+                                                                        <div id="signatureContainer">
+                                                                            <div class="text-center">
+                                                                                <button type="button"
+                                                                                    class="btn btn-success btn-lg"
+                                                                                    id="signFormButton">
+                                                                                    <i
+                                                                                        class="fas fa-signature me-2"></i>Sign
+                                                                                    the Form
+                                                                                </button>
+                                                                                <p class="text-muted mt-2">This will
+                                                                                    apply your signature and lock the
+                                                                                    form
+                                                                                    for editing</p>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div id="signedContainer"
+                                                                            style="display: none;">
+                                                                            <div
+                                                                                class="alert alert-success text-center">
+                                                                                <h4><i
+                                                                                        class="fas fa-check-circle me-2"></i>Form
+                                                                                    Signed Successfully!</h4>
+                                                                                <p>Your signature has been applied to
+                                                                                    this assessment.</p>
+                                                                                <img id="appliedSignature" src=""
+                                                                                    alt="Applied signature"
+                                                                                    class="border rounded mt-3"
+                                                                                    style="max-height: 80px; background: white;">
+                                                                            </div>
+                                                                        </div>
+                                                                        <input type="hidden" name="nurse_signature"
+                                                                            id="nurseSignatureInput">
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <!-- Submit Button -->
+                                                            <div class="text-center mt-4">
+                                                                <button type="submit"
+                                                                    class="btn btn-primary btn-lg px-5" id="submitBtn"
+                                                                    aria-label="Submit the completed nursing assessment"
+                                                                    aria-describedby="submitStatus">
+                                                                    <i class="fas fa-save me-2" aria-hidden="true"></i>
+                                                                    <span id="submitBtnText">Submit Assessment</span>
+                                                                </button>
+                                                                <div id="submitStatus" class="sr-only"
+                                                                    aria-live="polite">Ready to submit assessment</div>
+                                                                <a href="/" class="btn btn-secondary btn-lg"
+                                                                    aria-label="Return to home page without saving">
+                                                                    <i class="fas fa-arrow-left me-2"
+                                                                        aria-hidden="true"></i>
+                                                                    Back to Home
+                                                                </a>
+                                                            </div>
+                    </form>
+        </div>
+        </div>
+
+
+        <script src="/js/signature-utils.js"></script>
+        <script src="/js/form-validation.js"></script>
+
+        <!-- Signature Script -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                // Check if assessment is completed
+                const isCompleted = JSON.parse('<%- JSON.stringify(!!isCompleted) %>');
+                const assessmentSignature = JSON.parse('<%- JSON.stringify(assessmentSignature ?? null) %>');
+
+                if (isCompleted) {
+                    // Disable all form inputs for completed assessments
+                    const form = document.getElementById('nurseForm');
+                    const inputs = form.querySelectorAll('input:not([type="hidden"]), select, textarea, button');
+                    inputs.forEach(input => {
+                        input.disabled = true;
+                        input.style.opacity = '0.6';
+                    });
+
+                    // Hide submit buttons and show completed message
+                    const submitBtn = document.getElementById('submitBtn');
+                    const backBtn = document.querySelector('a[href="/"]');
+
+                    if (submitBtn) submitBtn.style.display = 'none';
+
+                    // Update back button text
+                    if (backBtn) {
+                        backBtn.innerHTML = '<i class="fas fa-arrow-left me-2"></i>Back to Dashboard';
+                        backBtn.setAttribute('href', '/nurse');
+                    }
+
+                    // Show completed assessment message
+                    const signatureSection = document.getElementById('signatureSection');
+                    const signatureHtml = assessmentSignature ? displaySignature(assessmentSignature) : '';
+                    signatureSection.innerHTML = `
+                    <h3><i class="fas fa-check-circle me-2" aria-hidden="true"></i>Assessment Completed</h3>
+                    <div class="alert alert-success">
+                        <h4><i class="fas fa-lock me-2"></i>This nursing assessment has been completed and signed.</h4>
+                        <p>The assessment is locked for editing. To make changes, please contact an administrator.</p>
+                        ${signatureHtml}
+                        <p class="text-muted mt-2">Signed by the assessing nurse</p>
+                    </div>
+                `;
+
+                    // Add visual indicator to the page
+                    const mainContent = document.getElementById('main-content');
+                    const completedBanner = document.createElement('div');
+                    completedBanner.className = 'alert alert-info text-center mb-4';
+                    completedBanner.innerHTML = '<h4><i class="fas fa-info-circle me-2"></i>This assessment has been completed and is read-only</h4>';
+                    mainContent.insertBefore(completedBanner, mainContent.firstChild);
+
+                    return; // Exit early for completed assessments
+                }
+                // Auto-populate age from patient's date of birth
+                const patientDOB = '<%= visit.date_of_birth %>';
+                const ageField = document.getElementById('ageField');
+
+                if (patientDOB && patientDOB !== 'null' && !ageField.value) {
+                    let birthDate;
+
+                    // Handle HL7 date format (YYYYMMDD) or ISO format (YYYY-MM-DD)
+                    if (patientDOB.length === 8 && /^\d{8}$/.test(patientDOB)) {
+                        // HL7 format: YYYYMMDD
+                        const year = patientDOB.substring(0, 4);
+                        const month = patientDOB.substring(4, 6);
+                        const day = patientDOB.substring(6, 8);
+                        birthDate = new Date(`${year}-${month}-${day}`);
+                    } else {
+                        // Standard ISO format or other formats
+                        birthDate = new Date(patientDOB);
+                    }
+
+                    if (!isNaN(birthDate.getTime())) {
+                        const today = new Date();
+                        let age = today.getFullYear() - birthDate.getFullYear();
+                        const monthDiff = today.getMonth() - birthDate.getMonth();
+
+                        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                            age--;
+                        }
+
+                        ageField.value = age;
+                    }
+                }
+
+                const signatureInput = document.getElementById('nurseSignatureInput');
+                const signFormButton = document.getElementById('signFormButton');
+                const signatureContainer = document.getElementById('signatureContainer');
+                const signedContainer = document.getElementById('signedContainer');
+                const appliedSignature = document.getElementById('appliedSignature');
+
+                // Function to display signature (handles both PNG and SVG)
+                function displaySignature(signatureData) {
+                    return window.SignatureUtils.renderSignature(signatureData, {
+                        maxHeight: 80,
+                        altText: 'Signature'
+                    });
+                }
+
+                // Check if user has existing signature
+                const userSignature = JSON.parse('<%- JSON.stringify(userSignature ?? null) %>');
+                const userRole = '<%= user.role %>';
+                const isAdmin = userRole === 'admin';
+
+                if (userSignature) {
+                    // User has signature, show sign button
+                    signatureContainer.style.display = 'block';
+                    signedContainer.style.display = 'none';
+
+                    // Handle sign form button
+                    signFormButton.addEventListener('click', function () {
+                        // For signing, we just set the signature - form will be disabled after final submission
+                        signatureInput.value = userSignature;
+                        appliedSignature.outerHTML = displaySignature(userSignature);
+
+                        // Show signed confirmation
+                        signatureContainer.style.display = 'none';
+                        signedContainer.style.display = 'block';
+
+                        // Note: Form will be disabled only after final submission on the server side
+                        // Draft saves don't disable the form
+                    });
+                } else {
+                    // No signature - this shouldn't happen since signatures are required on user creation
+                    signatureContainer.innerHTML = '<div class="alert alert-warning">No signature found. Please contact an administrator to set up your signature.</div>';
+                }
+
+                function disableFormAfterSignature() {
+                    // Disable all form inputs except submit buttons
+                    const form = document.getElementById('nurseForm');
+                    const inputs = form.querySelectorAll('input:not([type="hidden"]):not([type="submit"]), select, textarea');
+                    inputs.forEach(input => {
+                        input.disabled = true;
+                        input.style.opacity = '0.6';
+                    });
+
+                    // Update signature section to show locked state
+                    const signatureSection = document.getElementById('signatureSection');
+                    signatureSection.innerHTML = `
+                    <h3><i class="fas fa-lock me-2" aria-hidden="true"></i>Form Signed and Locked</h3>
+                    <div class="alert alert-success">
+                        <h4><i class="fas fa-check-circle me-2"></i>Assessment Signed Successfully!</h4>
+                        <p>This nursing assessment has been signed and is now locked for editing.</p>
+                        <img src="${userSignature}" alt="Applied signature" class="border rounded mt-3" style="max-height: 80px; background: white;">
+                        <p class="text-muted mt-2">To make changes, please contact an administrator.</p>
+                    </div>
+                `;
+                }
+
+                // Form validation - check if signature exists before final submission only
+                document.getElementById('nurseForm').addEventListener('submit', function (e) {
+                    // Require signature for all submissions
+                    const signatureData = signatureInput.value;
+                    if (!signatureData || signatureData === '') {
+                        e.preventDefault();
+                        alert('Please sign the assessment before submitting.');
+                        signFormButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        signFormButton.style.borderColor = '#dc3545';
+                        setTimeout(() => {
+                            signFormButton.style.borderColor = '';
+                        }, 3000);
+                        return false;
+                    }
+                });
+
+                // Morse Fall Scale calculation
+                function calculateMorseScore() {
+                    let totalScore = 0;
+                    const morseRadios = document.querySelectorAll('.morse-radio:checked');
+
+                    morseRadios.forEach(radio => {
+                        totalScore += parseInt(radio.getAttribute('data-score')) || 0;
+                    });
+
+                    // Update total score display
+                    document.getElementById('morseTotalScore').textContent = totalScore;
+                    document.getElementById('morseTotalScoreInput').value = totalScore;
+
+                    // Determine risk level
+                    let riskLevel = '';
+                    if (totalScore <= 10) {
+                        riskLevel = 'Low Risk';
+                    } else if (totalScore <= 20) {
+                        riskLevel = 'Medium Risk';
+                    } else if (totalScore <= 30) {
+                        riskLevel = 'High Risk';
+                    } else {
+                        riskLevel = 'Very High Risk';
+                    }
+
+                    document.getElementById('morseRiskLevel').textContent = riskLevel;
+                    document.getElementById('morseRiskLevelInput').value = riskLevel;
+
+                    // Update risk level color
+                    const riskElement = document.getElementById('morseRiskLevel');
+                    riskElement.className = 'text-warning'; // Reset class
+                    if (riskLevel === 'Low Risk') {
+                        riskElement.className = 'text-success';
+                    } else if (riskLevel === 'Medium Risk') {
+                        riskElement.className = 'text-warning';
+                    } else if (riskLevel === 'High Risk') {
+                        riskElement.className = 'text-danger';
+                    } else {
+                        riskElement.className = 'text-danger fw-bold';
+                    }
+                }
+
+                // Add event listeners to Morse scale radio buttons
+                document.querySelectorAll('.morse-radio').forEach(radio => {
+                    radio.addEventListener('change', calculateMorseScore);
+                });
+
+                // Calculate initial Morse score on page load
+                calculateMorseScore();
+
+                // Pediatric Fall Risk calculation
+                function calculatePediatricScore() {
+                    let totalScore = 0;
+                    const pediatricRadios = document.querySelectorAll('.pediatric-radio:checked');
+
+                    pediatricRadios.forEach(radio => {
+                        totalScore += parseInt(radio.getAttribute('data-score')) || 0;
+                    });
+
+                    // Update total score display
+                    document.getElementById('pediatricTotalScore').textContent = totalScore;
+
+                    document.getElementById('pediatricTotalScoreInput').value = totalScore;
+
+                    // Determine risk level
+                    let riskLevel = '';
+                    if (totalScore <= 2) {
+                        riskLevel = 'Low Risk';
+                    } else if (totalScore <= 4) {
+                        riskLevel = 'Medium Risk';
+                    } else {
+                        riskLevel = 'High Risk';
+                    }
+
+                    document.getElementById('pediatricRiskLevel').textContent = riskLevel;
+                    document.getElementById('pediatricRiskLevelInput').value = riskLevel;
+
+                    // Update risk level color
+                    const riskElement = document.getElementById('pediatricRiskLevel');
+                    riskElement.className = 'text-warning'; // Reset class
+                    if (riskLevel === 'Low Risk') {
+                        riskElement.className = 'text-success';
+                    } else if (riskLevel === 'Medium Risk') {
+                        riskElement.className = 'text-warning';
+                    } else {
+                        riskElement.className = 'text-danger';
+                    }
+                }
+
+                // Add event listeners to Pediatric scale radio buttons
+                document.querySelectorAll('.pediatric-radio').forEach(radio => {
+                    radio.addEventListener('change', calculatePediatricScore);
+                });
+
+                // Calculate initial Pediatric score on page load
+                calculatePediatricScore();
+
+                // Elderly Assessment calculation
+                function calculateElderlyScore() {
+                    let totalScore = 0;
+
+                    // Radio buttons
+                    const elderlyRadios = document.querySelectorAll('.elderly-radio:checked');
+                    elderlyRadios.forEach(radio => {
+                        totalScore += parseInt(radio.getAttribute('data-score')) || 0;
+                    });
+
+                    // Select dropdowns
+                    const elderlySelects = document.querySelectorAll('.elderly-select');
+                    elderlySelects.forEach(select => {
+                        const selectedOption = select.options[select.selectedIndex];
+                        totalScore += parseInt(selectedOption.getAttribute('data-score')) || 0;
+                    });
+
+                    // Checkboxes
+                    const elderlyCheckboxes = document.querySelectorAll('.elderly-checkbox:checked');
+                    elderlyCheckboxes.forEach(checkbox => {
+                        totalScore += parseInt(checkbox.getAttribute('data-score')) || 0;
+                    });
+
+                    // Update total score display
+                    document.getElementById('elderlyTotalScore').textContent = totalScore;
+                    document.getElementById('elderlyTotalScoreInput').value = totalScore;
+
+                    // Determine risk level
+                    let riskLevel = '';
+                    if (totalScore <= 3) {
+                        riskLevel = 'Low Risk';
+                    } else if (totalScore <= 6) {
+                        riskLevel = 'Medium Risk';
+                    } else {
+                        riskLevel = 'High Risk';
+                    }
+
+                    document.getElementById('elderlyRiskLevel').textContent = riskLevel;
+                    document.getElementById('elderlyRiskLevelInput').value = riskLevel;
+
+                    // Update risk level color
+                    const riskElement = document.getElementById('elderlyRiskLevel');
+                    riskElement.className = 'text-warning'; // Reset class
+                    if (riskLevel === 'Low Risk') {
+                        riskElement.className = 'text-success';
+                    } else if (riskLevel === 'Medium Risk') {
+                        riskElement.className = 'text-warning';
+                    } else {
+                        riskElement.className = 'text-danger';
+                    }
+                }
+
+                // Add event listeners to Elderly assessment elements
+                document.querySelectorAll('.elderly-radio, .elderly-select, .elderly-checkbox').forEach(element => {
+                    element.addEventListener('change', calculateElderlyScore);
+                });
+
+                // Calculate initial Elderly score on page load
+                calculateElderlyScore();
+
+                // Age-based assessment logic
+                function toggleFallRiskAssessments() {
+                    const ageField = document.getElementById('ageField');
+                    const age = parseInt(ageField.value) || 0;
+
+                    const morseSection = document.getElementById('morseFallScaleSection');
+                    const pediatricSection = document.getElementById('pediatricFallRiskSection');
+                    const elderlySection = document.getElementById('elderlyAssessmentSection');
+
+                    if (age >= 65) {
+                        // Show elderly assessment, hide others
+                        morseSection.style.display = 'none';
+                        pediatricSection.style.display = 'none';
+                        elderlySection.style.display = 'block';
+                    } else if (age < 18 && age > 0) {
+                        // Show pediatric assessment, hide others
+                        morseSection.style.display = 'none';
+                        pediatricSection.style.display = 'block';
+                        elderlySection.style.display = 'none';
+                    } else {
+                        // Show Morse assessment, hide others
+                        morseSection.style.display = 'block';
+                        pediatricSection.style.display = 'none';
+                        elderlySection.style.display = 'none';
+                    }
+                }
+
+                // Add event listener to age field
+                document.getElementById('ageField').addEventListener('input', toggleFallRiskAssessments);
+
+                // Initial toggle based on current age
+                toggleFallRiskAssessments();
+            });
+        </script>
+
+        <!-- Populate form fields from existing assessment data -->
+        <% if (assessment && assessment.morse_scale) { %>
+            <div id="morse-data" data-morse='<%= JSON.stringify(assessment.morse_scale).replace(/' /g, "\\'" ) %>'>
+            </div>
+            <% } %>
+
+                <% if (assessment && assessment.pediatric_fall_risk) { %>
+                    <div id="pediatric-data"
+                        data-pediatric='<%= JSON.stringify(assessment.pediatric_fall_risk).replace(/' /g, "\\'" ) %>'>
+                    </div>
+                    <% } %>
+
+                        <% if (assessment && assessment.elderly_assessment) { %>
+                            <div id="elderly-data"
+                                data-elderly='<%= JSON.stringify(assessment.elderly_assessment).replace(/' /g, "\\'" )
+                                %>'></div>
+                            <% } %>
+
+                                <script>
+                                    // Populate Morse scale data
+                                    const morseDataElement = document.getElementById('morse-data');
+                                    if (morseDataElement) {
+                                        try {
+                                            const morseData = JSON.parse(morseDataElement.dataset.morse);
+                                            if (morseData) {
+                                                // Populate Morse scale fields
+                                                if (morseData.history_falling !== undefined) {
+                                                    const element = document.querySelector(`input[name="morse_history_falling"][value="${morseData.history_falling}"]`);
+                                                    if (element) element.checked = true;
+                                                }
+                                                if (morseData.secondary_diagnosis !== undefined) {
+                                                    const element = document.querySelector(`input[name="morse_secondary_diagnosis"][value="${morseData.secondary_diagnosis}"]`);
+                                                    if (element) element.checked = true;
+                                                }
+                                                if (morseData.ambulatory_aid !== undefined) {
+                                                    const element = document.querySelector(`input[name="morse_ambulatory_aid"][value="${morseData.ambulatory_aid}"]`);
+                                                    if (element) element.checked = true;
+                                                }
+                                                if (morseData.iv_therapy !== undefined) {
+                                                    const element = document.querySelector(`input[name="morse_iv_therapy"][value="${morseData.iv_therapy}"]`);
+                                                    if (element) element.checked = true;
+                                                }
+                                                if (morseData.gait !== undefined) {
+                                                    const element = document.querySelector(`input[name="morse_gait"][value="${morseData.gait}"]`);
+                                                    if (element) element.checked = true;
+                                                }
+                                                if (morseData.mental_status !== undefined) {
+                                                    const element = document.querySelector(`input[name="morse_mental_status"][value="${morseData.mental_status}"]`);
+                                                    if (element) element.checked = true;
+                                                }
+                                            }
+                                        } catch (e) {
+                                            console.error('Error parsing Morse scale data:', e);
+                                        }
+                                    }
+
+                                    // Populate Pediatric fall risk data
+                                    const pediatricDataElement = document.getElementById('pediatric-data');
+                                    if (pediatricDataElement) {
+                                        try {
+                                            const pediatricData = JSON.parse(pediatricDataElement.dataset.pediatric);
+                                            if (pediatricData) {
+                                                // Populate Pediatric fall risk fields
+                                                if (pediatricData.developmental_stage !== undefined) {
+                                                    const element = document.querySelector(`input[name="pediatric_developmental_stage"][value="${pediatricData.developmental_stage}"]`);
+                                                    if (element) element.checked = true;
+                                                }
+                                                if (pediatricData.activity_level !== undefined) {
+                                                    const element = document.querySelector(`input[name="pediatric_activity_level"][value="${pediatricData.activity_level}"]`);
+                                                    if (element) element.checked = true;
+                                                }
+                                                if (pediatricData.medication_use !== undefined) {
+                                                    const element = document.querySelector(`input[name="pediatric_medication_use"][value="${pediatricData.medication_use}"]`);
+                                                    if (element) element.checked = true;
+                                                }
+                                                if (pediatricData.environmental_factors !== undefined) {
+                                                    const element = document.querySelector(`input[name="pediatric_environmental_factors"][value="${pediatricData.environmental_factors}"]`);
+                                                    if (element) element.checked = true;
+                                                }
+                                                if (pediatricData.previous_falls !== undefined) {
+                                                    const element = document.querySelector(`input[name="pediatric_previous_falls"][value="${pediatricData.previous_falls}"]`);
+                                                    if (element) element.checked = true;
+                                                }
+                                                if (pediatricData.cognitive_factors !== undefined) {
+                                                    const element = document.querySelector(`input[name="pediatric_cognitive_factors"][value="${pediatricData.cognitive_factors}"]`);
+                                                    if (element) element.checked = true;
+                                                }
+                                            }
+                                        } catch (e) {
+                                            console.error('Error parsing Pediatric fall risk data:', e);
+                                        }
+                                    }
+
+                                    // Populate Elderly assessment data
+                                    const elderlyDataElement = document.getElementById('elderly-data');
+                                    if (elderlyDataElement) {
+                                        try {
+                                            const elderlyData = JSON.parse(elderlyDataElement.dataset.elderly);
+                                            if (elderlyData) {
+                                                // Populate Elderly assessment fields
+                                                if (elderlyData.orientation !== undefined) {
+                                                    const element = document.querySelector(`select[name="elderly_orientation"]`);
+                                                    if (element) element.value = elderlyData.orientation;
+                                                }
+                                                if (elderlyData.memory !== undefined) {
+                                                    const element = document.querySelector(`select[name="elderly_memory"]`);
+                                                    if (element) element.value = elderlyData.memory;
+                                                }
+                                                if (elderlyData.bathing !== undefined) {
+                                                    const element = document.querySelector(`select[name="elderly_bathing"]`);
+                                                    if (element) element.value = elderlyData.bathing;
+                                                }
+                                                if (elderlyData.dressing !== undefined) {
+                                                    const element = document.querySelector(`select[name="elderly_dressing"]`);
+                                                    if (element) element.value = elderlyData.dressing;
+                                                }
+                                                if (elderlyData.toileting !== undefined) {
+                                                    const element = document.querySelector(`select[name="elderly_toileting"]`);
+                                                    if (element) element.value = elderlyData.toileting;
+                                                }
+                                                if (elderlyData.medication_count !== undefined) {
+                                                    const element = document.querySelector(`input[name="elderly_medication_count"]`);
+                                                    if (element) element.value = elderlyData.medication_count;
+                                                }
+                                                if (elderlyData.high_risk_meds !== undefined) {
+                                                    const element = document.querySelector(`input[name="elderly_high_risk_meds"][value="${elderlyData.high_risk_meds ? '1' : '0'}"]`);
+                                                    if (element) element.checked = true;
+                                                }
+                                                if (elderlyData.falls !== undefined) {
+                                                    const element = document.querySelector(`input[name="elderly_falls"][value="${elderlyData.falls ? '1' : '0'}"]`);
+                                                    if (element) element.checked = true;
+                                                }
+                                                if (elderlyData.incontinence !== undefined) {
+                                                    const element = document.querySelector(`input[name="elderly_incontinence"][value="${elderlyData.incontinence ? '1' : '0'}"]`);
+                                                    if (element) element.checked = true;
+                                                }
+                                                if (elderlyData.delirium !== undefined) {
+                                                    const element = document.querySelector(`input[name="elderly_delirium"][value="${elderlyData.delirium ? '1' : '0'}"]`);
+                                                    if (element) element.checked = true;
+                                                }
+                                                if (elderlyData.living_situation !== undefined) {
+                                                    const element = document.querySelector(`select[name="elderly_living_situation"]`);
+                                                    if (element) element.value = elderlyData.living_situation;
+                                                }
+                                                if (elderlyData.social_support !== undefined) {
+                                                    const element = document.querySelector(`select[name="elderly_social_support"]`);
+                                                    if (element) element.value = elderlyData.social_support;
+                                                }
+                                            }
+                                        } catch (e) {
+                                            console.error('Error parsing Elderly assessment data:', e);
+                                        }
+                                    }
+
+                                    // Document Upload Preview Handler
+                                    const fileInput = document.getElementById('visitDocuments');
+                                    const previewContainer = document.getElementById('documentPreview');
+                                    const metadataSection = document.getElementById('documentMetadata');
+                                    let selectedFiles = [];
+
+                                    fileInput.addEventListener('change', function (e) {
+                                        const files = Array.from(e.target.files);
+
+                                        if (files.length > 5) {
+                                            alert('Maximum 5 files allowed');
+                                            fileInput.value = '';
+                                            return;
+                                        }
+
+                                        // Check file sizes
+                                        const oversizedFiles = files.filter(f => f.size > 10 * 1024 * 1024);
+                                        if (oversizedFiles.length > 0) {
+                                            alert('Some files exceed 10MB limit. Please select smaller files.');
+                                            fileInput.value = '';
+                                            return;
+                                        }
+
+                                        selectedFiles = files;
+                                        displayFilePreview(files);
+
+                                        if (files.length > 0) {
+                                            metadataSection.style.display = 'block';
+                                        } else {
+                                            metadataSection.style.display = 'none';
+                                        }
+                                    });
+
+                                    function displayFilePreview(files) {
+                                        previewContainer.innerHTML = '';
+
+                                        if (files.length === 0) {
+                                            return;
+                                        }
+
+                                        const previewHTML = `
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-files me-2"></i>Selected Files (${files.length})</h6>
+                    <ul class="mb-0">
+                        ${files.map(file => `
+                            <li>
+                                <i class="fas fa-${getFileIcon(file.name)} me-2"></i>
+                                <strong>${file.name}</strong> 
+                                <span class="text-muted">(${formatFileSize(file.size)})</span>
+                            </li>
+                        `).join('')}
+                    </ul>
+                    <small class="text-muted d-block mt-2">
+                        <i class="fas fa-magic me-1"></i>Image files will be automatically converted to scanned B&W format upon upload
+                    </small>
+                </div>
+            `;
+
+                                        previewContainer.innerHTML = previewHTML;
+                                    }
+
+                                    function getFileIcon(filename) {
+                                        const ext = filename.split('.').pop().toLowerCase();
+                                        if (ext === 'pdf') return 'file-pdf';
+                                        if (['jpg', 'jpeg', 'png'].includes(ext)) return 'file-image';
+                                        return 'file';
+                                    }
+
+                                    function formatFileSize(bytes) {
+                                        if (bytes === 0) return '0 Bytes';
+                                        const k = 1024;
+                                        const sizes = ['Bytes', 'KB', 'MB'];
+                                        const i = Math.floor(Math.log(bytes) / Math.log(k));
+                                        return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+                                    }
+
+                                    // Handle form submission with documents
+                                    document.getElementById('nurseForm').addEventListener('submit', async function (e) {
+                                        // If there are documents, upload them asynchronously before form submission
+                                        if (selectedFiles.length > 0) {
+                                            e.preventDefault();
+
+                                            // For all submissions, check signature
+                                            const signatureInput = document.getElementById('nurseSignatureInput');
+                                            const signatureData = signatureInput.value;
+                                            if (!signatureData || signatureData === '') {
+                                                alert('Please sign the assessment before submitting.');
+                                                const signFormButton = document.getElementById('signFormButton');
+                                                signFormButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                                signFormButton.style.borderColor = '#dc3545';
+                                                setTimeout(() => {
+                                                    signFormButton.style.borderColor = '';
+                                                }, 3000);
+                                                return; // Don't proceed with document upload
+                                            }
+
+                                            // Upload documents first
+                                            const uploadSuccess = await uploadDocuments();
+
+                                            if (uploadSuccess) {
+                                                // Clear the file input to avoid resubmission
+                                                selectedFiles = [];
+                                                fileInput.value = '';
+
+                                                // Create a hidden input to preserve the action
+                                                const actionInput = document.createElement('input');
+                                                actionInput.type = 'hidden';
+                                                actionInput.name = 'action';
+                                                actionInput.value = 'final';
+                                                this.appendChild(actionInput);
+
+                                                // Submit the form programmatically (this bypasses the normal submit handler)
+                                                this.submit();
+                                            } else {
+                                                alert('Failed to upload documents. Please try again.');
+                                            }
+
+                                            return false; // Prevent any further processing
+                                        } else {
+                                            // No documents - apply normal form validation
+                                            // Always require signature for all submissions
+                                            const signatureInput = document.getElementById('nurseSignatureInput');
+                                            const signatureData = signatureInput.value;
+                                            if (!signatureData || signatureData === '') {
+                                                e.preventDefault();
+                                                alert('Please sign the assessment before submitting.');
+                                                const signFormButton = document.getElementById('signFormButton');
+                                                signFormButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                                signFormButton.style.borderColor = '#dc3545';
+                                                setTimeout(() => {
+                                                    signFormButton.style.borderColor = '';
+                                                }, 3000);
+                                                return false;
+                                            }
+                                        }
+                                    });
+
+                                    async function uploadDocuments() {
+                                        const visitId = document.querySelector('input[name="visit_id"]').value;
+                                        const documentType = document.getElementById('documentType').value;
+                                        const description = document.getElementById('documentDescription').value;
+
+                                        const formData = new FormData();
+                                        formData.append('visit_id', visitId);
+                                        formData.append('document_type', documentType);
+                                        formData.append('description', description);
+                                        formData.append('_csrf', document.querySelector('input[name="_csrf"]').value);
+
+                                        selectedFiles.forEach(file => {
+                                            formData.append('documents', file);
+                                        });
+
+                                        try {
+                                            const response = await fetch('/documents/upload', {
+                                                method: 'POST',
+                                                body: formData
+                                            });
+
+                                            const result = await response.json();
+
+                                            if (response.ok) {
+                                                console.log('Documents uploaded successfully');
+                                                return true;
+                                            } else {
+                                                console.error('Upload failed:', result.error);
+                                                return false;
+                                            }
+                                        } catch (error) {
+                                            console.error('Upload error:', error);
+                                            return false;
+                                        }
+                                    }
+                                </script>
+                                <%- include('partials/layout-footer') %>

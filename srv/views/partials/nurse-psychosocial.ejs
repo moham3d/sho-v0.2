@@ -1,0 +1,61 @@
+<!-- Psychosocial Assessment -->
+<div class="form-section">
+    <h3><i class="fas fa-brain me-2" aria-hidden="true"></i>Psychosocial Assessment: التقييم النفسي الاجتماعي</h3>
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label">Psychological Problem: المشكلة النفسية</label>
+            <select class="form-select" name="psychological_problem"
+                aria-label="Patient's current psychological condition">
+                <option value="none" <%=assessment && assessment.psychological_problem==='none' ? 'selected' : '' %>
+                    >None: لا شيء</option>
+                <option value="depressed" <%=assessment && assessment.psychological_problem==='depressed' ? 'selected'
+                    : '' %>>Depressed: مكتئب</option>
+                <option value="agitated" <%=assessment && assessment.psychological_problem==='agitated' ? 'selected'
+                    : '' %>>Agitated: مضطرب</option>
+                <option value="anxious" <%=assessment && assessment.psychological_problem==='anxious' ? 'selected' : ''
+                    %>>Anxious: قلق</option>
+                <option value="isolated" <%=assessment && assessment.psychological_problem==='isolated' ? 'selected'
+                    : '' %>>Isolated: منعزل</option>
+                <option value="confused" <%=assessment && assessment.psychological_problem==='confused' ? 'selected'
+                    : '' %>>Confused: مرتبك</option>
+                <option value="other" <%=assessment && assessment.psychological_problem==='other' ? 'selected' : '' %>
+                    >Other: أخرى</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Smoker: مدخن</label>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" name="is_smoker" <%=assessment && assessment.is_smoker
+                    ? 'checked' : '' %> aria-label="Patient is a smoker">
+            </div>
+        </div>
+        <div class="col-12">
+            <label class="form-label">Allergies: الحساسية</label>
+            <div class="row">
+                <div class="col-md-4">
+                    <% if (assessment && (assessment.has_allergies || assessment.medication_allergies ||
+                        assessment.food_allergies || assessment.other_allergies)) { %>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="has_allergies" id="has_allergies"
+                                <%=assessment && assessment.has_allergies ? 'checked' : '' %> aria-label="Patient has
+                            allergies">
+                            <label class="form-check-label" for="has_allergies">Has Allergies: لديه حساسية</label>
+                        </div>
+                        <% } %>
+                </div>
+            </div>
+            <div class="mt-2">
+                <input type="text" class="form-control" name="medication_allergies"
+                    placeholder="Medication allergies: لديه حساسية تجاه الأدوية"
+                    value="<%= assessment ? assessment.medication_allergies : '' %>"
+                    aria-label="List of medication allergies">
+                <input type="text" class="form-control mt-2" name="food_allergies"
+                    placeholder="Food allergies: لديه حساسية تجاه الطعام"
+                    value="<%= assessment ? assessment.food_allergies : '' %>" aria-label="List of food allergies">
+                <input type="text" class="form-control mt-2" name="other_allergies"
+                    placeholder="Other allergies: حساسية أخرى"
+                    value="<%= assessment ? assessment.other_allergies : '' %>" aria-label="List of other allergies">
+            </div>
+        </div>
+    </div>
+</div>

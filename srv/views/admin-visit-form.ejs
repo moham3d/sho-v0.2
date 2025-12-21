@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= visit ? 'Edit' : 'Add' %> Visit - Al-Shorouk Radiology Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/css/custom.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .navbar-brand {
+            font-weight: bold;
+        }
+        .navbar-brand i {
+            color: #ffffff;
+        }
+        .navbar-nav .nav-link {
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        .navbar-nav .nav-link:hover {
+            color: rgba(255, 255, 255, 0.8) !important;
+        }
+        .navbar-nav .nav-link.active {
+            color: #ffffff !important;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+        }
+        .user-info {
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        .user-role {
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+        .logout-btn {
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+        .logout-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-label {
+            font-weight: 600;
+            color: #495057;
+        }
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #17a2b8;
+            box-shadow: 0 0 0 0.2rem rgba(23, 162, 184, 0.25);
+        }
+        .btn-custom {
+            border-radius: 25px;
+            padding: 10px 30px;
+            font-weight: 600;
+        }
+        .required-field::after {
+            content: " *";
+            color: #dc3545;
+        }
+        .form-section {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .section-title {
+            color: #17a2b8;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        .invalid-feedback {
+            display: block;
+        }
+        .patient-info {
+            background-color: #e7f3ff;
+            border: 1px solid #b3d7ff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .patient-info h5 {
+            color: #0056b3;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <%- include('navigation', { currentPage: 'admin' }) %>
+
+    <div class="container mt-4" id="main-content" role="main">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <!-- Breadcrumbs -->
+                <nav aria-label="breadcrumb" class="mb-3">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="/"><i class="fas fa-home me-1" aria-hidden="true"></i>Home</a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <a href="/admin">Admin</a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <a href="/admin/visits">Visit Management</a>
+                        </li>
+                        <li class="breadcrumb-item active" aria-current="page">
+                            <%= visit ? 'Edit Visit' : 'Add New Visit' %>
+                        </li>
+                    </ol>
+                </nav>
+
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2>
+                            <i class="fas fa-<%= visit ? 'edit' : 'plus' %> me-2" aria-hidden="true"></i>
+                            <%= visit ? 'Edit Visit' : 'Add New Visit' %>
+                        </h2>
+                        <p class="text-muted">
+                            <%= visit ? 'Update visit information' : 'Create a new patient visit record' %>
+                        </p>
+                    </div>
+                    <a href="/admin/visits" class="btn btn-outline-secondary btn-custom">
+                        <i class="fas fa-arrow-left me-2" aria-hidden="true"></i>Back to Visits
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notification -->
+        <% if (notification) { %>
+            <div class="alert alert-<%= notification.type === 'success' ? 'success' : 'danger' %> alert-dismissible fade show" role="alert">
+                <i class="fas fa-<%= notification.type === 'success' ? 'check-circle' : 'exclamation-triangle' %> me-2" aria-hidden="true"></i>
+                <%= notification.message %>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <% } %>
+
+        <!-- Patient Selection (for new visits) -->
+        <% if (!visit) { %>
+            <div class="patient-info">
+                <h5><i class="fas fa-user me-2" aria-hidden="true"></i>Select Patient</h5>
+                <form method="GET" action="/admin/visits/new" class="row g-3">
+                    <div class="col-md-8">
+                        <label for="patient_search" class="form-label">Search Patient by SSN</label>
+                        <input type="text" class="form-control" id="patient_search" name="patient_ssn"
+                               value="<%= patient ? patient.ssn : '' %>" placeholder="Enter 14-digit SSN" required>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1" aria-hidden="true"></i>
+                            Enter the patient's SSN to load their information
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="submit" class="btn btn-primary d-block">
+                            <i class="fas fa-search me-2" aria-hidden="true"></i>Load Patient
+                        </button>
+                    </div>
+                </form>
+            </div>
+        <% } %>
+
+        <!-- Patient Information Display -->
+        <% if (patient || visit) { %>
+            <div class="patient-info">
+                <h5><i class="fas fa-user-check me-2" aria-hidden="true"></i>Patient Information</h5>
+                <div class="row">
+                    <div class="col-md-3">
+                        <strong>Full Name:</strong><br>
+                        <%= patient ? patient.full_name : (visit ? visit.patient_name : 'N/A') %>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>SSN:</strong><br>
+                        <%= patient ? patient.ssn : (visit ? visit.patient_ssn : 'N/A') %>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Mobile:</strong><br>
+                        <%= patient ? patient.mobile_number : 'N/A' %>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Medical Number:</strong><br>
+                        <%= patient ? patient.medical_number : 'N/A' %>
+                    </div>
+                </div>
+            </div>
+        <% } %>
+
+        <!-- Visit Form -->
+        <% if (patient || visit) { %>
+            <form method="POST" action="<%= visit ? `/admin/visits/${visit.visit_id}` : '/admin/visits' %>" id="visitForm" novalidate>
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <!-- Hidden patient SSN for new visits -->
+                <% if (!visit && patient) { %>
+                    <input type="hidden" name="patient_ssn" value="<%= patient.ssn %>">
+                <% } %>
+
+                <!-- Visit Information Section -->
+                <div class="card form-section">
+                    <h4 class="section-title">
+                        <i class="fas fa-calendar-day me-2" aria-hidden="true"></i>Visit Information
+                    </h4>
+                    <div class="row g-3">
+                        <% if (visit) { %>
+                            <div class="col-md-6">
+                                <label for="patient_ssn" class="form-label required-field">Patient SSN</label>
+                                <select class="form-select" id="patient_ssn" name="patient_ssn" required>
+                                    <option value="">Select Patient</option>
+                                    <% patients.forEach(p => { %>
+                                        <option value="<%= p.ssn %>" <%= visit && visit.patient_ssn === p.ssn ? 'selected' : '' %>>
+                                            <%= p.ssn %> - <%= p.full_name %> <%= p.medical_number ? `(${p.medical_number})` : '' %>
+                                        </option>
+                                    <% }); %>
+                                </select>
+                                <div class="invalid-feedback">
+                                    Please select a patient.
+                                </div>
+                            </div>
+                        <% } %>
+                        <div class="col-md-6">
+                            <label for="visit_date" class="form-label required-field">Visit Date</label>
+                            <input type="datetime-local" class="form-control" id="visit_date" name="visit_date"
+                                   value="<%= visit ? new Date(visit.visit_date).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16) %>" required>
+                            <div class="invalid-feedback">
+                                Please select a visit date.
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="visit_status" class="form-label required-field">Visit Status</label>
+                            <select class="form-select" id="visit_status" name="visit_status" required>
+                                <option value="">Select Status</option>
+                                <option value="open" <%= visit && visit.visit_status === 'open' ? 'selected' : '' %>>Open</option>
+                                <option value="in_progress" <%= visit && visit.visit_status === 'in_progress' ? 'selected' : '' %>>In Progress</option>
+                                <option value="completed" <%= visit && visit.visit_status === 'completed' ? 'selected' : '' %>>Completed</option>
+                                <option value="cancelled" <%= visit && visit.visit_status === 'cancelled' ? 'selected' : '' %>>Cancelled</option>
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select a visit status.
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="visit_type" class="form-label">Visit Type</label>
+                            <select class="form-select" id="visit_type" name="visit_type">
+                                <option value="">Select Type</option>
+                                <option value="consultation" <%= visit && visit.visit_type === 'consultation' ? 'selected' : '' %>>Consultation</option>
+                                <option value="follow_up" <%= visit && visit.visit_type === 'follow_up' ? 'selected' : '' %>>Follow-up</option>
+                                <option value="emergency" <%= visit && visit.visit_type === 'emergency' ? 'selected' : '' %>>Emergency</option>
+                                <option value="routine" <%= visit && visit.visit_type === 'routine' ? 'selected' : '' %>>Routine Check</option>
+                                <option value="procedure" <%= visit && visit.visit_type === 'procedure' ? 'selected' : '' %>>Procedure</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="department" class="form-label">Department</label>
+                            <input type="text" class="form-control" id="department" name="department"
+                                   value="<%= visit ? visit.department : '' %>"
+                                   placeholder="e.g., Radiology, Cardiology, Orthopedics">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="created_by" class="form-label">Created By</label>
+                            <select class="form-select" id="created_by" name="created_by">
+                                <option value="">Select User</option>
+                                <% users.forEach(u => { %>
+                                    <option value="<%= u.user_id %>" <%= visit && visit.created_by == u.user_id ? 'selected' : (!visit ? (req.session.userId == u.user_id ? 'selected' : '') : '') %>>
+                                        <%= u.full_name %> (<%= u.role %>)
+                                    </option>
+                                <% }); %>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Diagnosis Information Section -->
+                <div class="card form-section">
+                    <h4 class="section-title">
+                        <i class="fas fa-stethoscope me-2" aria-hidden="true"></i>Diagnosis Information
+                    </h4>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="primary_diagnosis" class="form-label">Primary Diagnosis</label>
+                            <input type="text" class="form-control" id="primary_diagnosis" name="primary_diagnosis"
+                                   value="<%= visit ? visit.primary_diagnosis : '' %>"
+                                   placeholder="Main diagnosis or condition">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="secondary_diagnosis" class="form-label">Secondary Diagnosis</label>
+                            <input type="text" class="form-control" id="secondary_diagnosis" name="secondary_diagnosis"
+                                   value="<%= visit ? visit.secondary_diagnosis : '' %>"
+                                   placeholder="Additional diagnosis if any">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="diagnosis_code" class="form-label">Diagnosis Code</label>
+                            <input type="text" class="form-control" id="diagnosis_code" name="diagnosis_code"
+                                   value="<%= visit ? visit.diagnosis_code : '' %>"
+                                   placeholder="ICD-10 or other diagnosis code">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="text-muted">
+                                <i class="fas fa-info-circle me-1" aria-hidden="true"></i>
+                                Fields marked with <span class="text-danger">*</span> are required
+                            </div>
+                            <div class="d-flex gap-2">
+                                <a href="/admin/visits" class="btn btn-outline-secondary btn-custom">
+                                    <i class="fas fa-times me-2" aria-hidden="true"></i>Cancel
+                                </a>
+                                <button type="submit" class="btn btn-info btn-custom">
+                                    <i class="fas fa-save me-2" aria-hidden="true"></i>
+                                    <%= visit ? 'Update Visit' : 'Create Visit' %>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        <% } %>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Form validation
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('visitForm');
+            if (!form) return;
+
+            form.addEventListener('submit', function(event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    // Find first invalid field and focus it
+                    const firstInvalid = form.querySelector(':invalid');
+                    if (firstInvalid) {
+                        firstInvalid.focus();
+                        firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+                form.classList.add('was-validated');
+            });
+
+            // Visit date validation
+            const visitDateInput = document.getElementById('visit_date');
+            if (visitDateInput) {
+                visitDateInput.addEventListener('change', function() {
+                    const selectedDate = new Date(this.value);
+                    const now = new Date();
+
+                    if (selectedDate > now) {
+                        // Future dates are allowed for scheduling
+                        this.setCustomValidity('');
+                    } else {
+                        this.setCustomValidity('');
+                    }
+                });
+            }
+
+            // Patient SSN search for new visits
+            const patientSearchInput = document.getElementById('patient_search');
+            if (patientSearchInput) {
+                patientSearchInput.addEventListener('input', function() {
+                    const value = this.value.replace(/\D/g, ''); // Remove non-digits
+                    this.value = value;
+
+                    if (value.length === 14) {
+                        this.setCustomValidity('');
+                    } else if (value.length > 0) {
+                        this.setCustomValidity('SSN must be exactly 14 digits');
+                    } else {
+                        this.setCustomValidity('');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,527 @@
+<%- include('partials/layout-header', { title: 'User Management - Al-Shorouk Radiology Management System' ,
+    currentPage: 'admin' , extraHead: ` <style>
+    .sortable {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    }
+    .sortable:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    }
+    .sort-icon {
+    margin-left: 5px;
+    opacity: 0.5;
+    }
+    .sortable.sort-asc .sort-icon:before {
+    content: "\\f145"; /* fa-sort-up */
+    }
+    .sortable.sort-desc .sort-icon:before {
+    content: "\\f144"; /* fa-sort-down */
+    }
+    .status-active { background-color: #28a745; }
+    .status-inactive { background-color: #dc3545; }
+    </style>
+    `
+    }) %>
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <!-- Breadcrumbs -->
+            <nav aria-label="Breadcrumb navigation" class="mb-3">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="/"><i class="fas fa-home me-1" aria-hidden="true"></i>Home</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="/admin">Admin Dashboard</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">User Management</li>
+                </ol>
+            </nav>
+
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1><i class="fas fa-users me-2" aria-hidden="true"></i>User Management</h1>
+                    <p class="text-muted">Manage system users, roles, and permissions</p>
+                </div>
+                <a href="/admin/users/new" class="btn btn-primary" aria-label="Add a new user to the system">
+                    <i class="fas fa-user-plus me-2" aria-hidden="true"></i>Add New User
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <% if (notification) { %>
+        <div class="alert alert-<%= notification.type === 'success' ? 'success' : 'danger' %> alert-dismissible fade show"
+            role="alert" aria-live="polite">
+            <i class="fas fa-<%= notification.type === 'success' ? 'check-circle' : 'exclamation-triangle' %> me-2"
+                aria-hidden="true"></i>
+            <%= notification.message %>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"
+                    aria-label="Dismiss notification"></button>
+        </div>
+        <% } %>
+
+            <!-- Filters -->
+            <section class="card mb-4" aria-labelledby="filter-heading">
+                <h2 id="filter-heading" class="visually-hidden">Filter Users</h2>
+                <div class="card-body">
+                    <form method="GET" role="search" aria-label="Search and filter users">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label for="search" class="form-label">Search Users</label>
+                                <input type="search" class="form-control" id="search" name="search"
+                                    value="<%= filters.search || '' %>" placeholder="Search by name, username, or email"
+                                    aria-describedby="search-help">
+                                <small id="search-help" class="visually-hidden">Enter a name, username, or email to
+                                    search</small>
+                            </div>
+                            <div class="col-md-2">
+                                <label for="role" class="form-label">Role</label>
+                                <select class="form-select" id="role" name="role" aria-label="Filter by user role">
+                                    <option value="all" <%=filters.role==='all' || !filters.role ? 'selected' : '' %>
+                                        >All Roles</option>
+                                    <option value="admin" <%=filters.role==='admin' ? 'selected' : '' %>>Admin</option>
+                                    <option value="physician" <%=filters.role==='physician' ? 'selected' : '' %>
+                                        >Physician</option>
+                                    <option value="nurse" <%=filters.role==='nurse' ? 'selected' : '' %>>Nurse</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label for="status" class="form-label">Status</label>
+                                <select class="form-select" id="status" name="status"
+                                    aria-label="Filter by account status">
+                                    <option value="all" <%=filters.status==='all' || !filters.status ? 'selected' : ''
+                                        %>>All Status</option>
+                                    <option value="active" <%=filters.status==='active' ? 'selected' : '' %>>Active
+                                    </option>
+                                    <option value="inactive" <%=filters.status==='inactive' ? 'selected' : '' %>
+                                        >Inactive</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary me-2">
+                                    <i class="fas fa-search me-1" aria-hidden="true"></i>Filter
+                                </button>
+                                <a href="/admin/users" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times me-1" aria-hidden="true"></i>Clear
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Users Table -->
+            <section class="card" aria-labelledby="users-table-heading">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h2 id="users-table-heading" class="h5 mb-0">
+                        <i class="fas fa-users me-2" aria-hidden="true"></i>Users (<%= users.length %>)
+                    </h2>
+                </div>
+                <!-- Bulk Actions -->
+                <div class="bulk-actions mt-2" id="bulkActions" style="display: none;">
+                    <div class="alert alert-info d-flex justify-content-between align-items-center">
+                        <span><strong id="selectedCount">0</strong> user(s) selected</span>
+                        <div>
+                            <button type="button" class="btn btn-sm btn-outline-primary me-2" id="bulkActivate">
+                                <i class="fas fa-user-check me-1" aria-hidden="true"></i>Activate
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-warning me-2" id="bulkDeactivate">
+                                <i class="fas fa-user-times me-1" aria-hidden="true"></i>Deactivate
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" id="bulkDelete">
+                                <i class="fas fa-trash me-1" aria-hidden="true"></i>Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <% if (users.length===0) { %>
+                        <div class="text-center py-5">
+                            <i class="fas fa-users fa-3x text-muted mb-3" aria-hidden="true"></i>
+                            <h5 class="text-muted">No users found</h5>
+                            <p class="text-muted">Try adjusting your search criteria or add a new user.</p>
+                            <a href="/admin/users/new" class="btn btn-primary">
+                                <i class="fas fa-user-plus me-2" aria-hidden="true"></i>Add New User
+                            </a>
+                        </div>
+                        <% } else { %>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>
+                                                <input type="checkbox" id="selectAllUsers" class="form-check-input">
+                                            </th>
+                                            <th class="sortable" data-column="0">
+                                                Username
+                                                <i class="fas fa-sort sort-icon" aria-hidden="true"></i>
+                                            </th>
+                                            <th class="sortable" data-column="1">
+                                                Email
+                                                <i class="fas fa-sort sort-icon" aria-hidden="true"></i>
+                                            </th>
+                                            <th class="sortable" data-column="2">
+                                                Full Name
+                                                <i class="fas fa-sort sort-icon" aria-hidden="true"></i>
+                                            </th>
+                                            <th class="sortable" data-column="3">
+                                                Role
+                                                <i class="fas fa-sort sort-icon" aria-hidden="true"></i>
+                                            </th>
+                                            <th class="sortable" data-column="4">
+                                                Status
+                                                <i class="fas fa-sort sort-icon" aria-hidden="true"></i>
+                                            </th>
+                                            <th class="sortable" data-column="5">
+                                                Created
+                                                <i class="fas fa-sort sort-icon" aria-hidden="true"></i>
+                                            </th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% users.forEach(user=> { %>
+                                            <tr>
+                                                <td>
+                                                    <input type="checkbox" class="user-checkbox form-check-input"
+                                                        data-user-id="<%= user.user_id %>">
+                                                </td>
+                                                <td>
+                                                    <strong>
+                                                        <%= user.username %>
+                                                    </strong>
+                                                </td>
+                                                <td>
+                                                    <a href="mailto:<%= user.email %>">
+                                                        <%= user.email %>
+                                                    </a>
+                                                </td>
+                                                <td>
+                                                    <%= user.full_name %>
+                                                </td>
+                                                <td>
+                                                    <span
+                                                        class="badge bg-<%= user.role === 'admin' ? 'danger' : user.role === 'physician' ? 'info' : 'success' %>">
+                                                        <%= user.role.charAt(0).toUpperCase() + user.role.slice(1) %>
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span
+                                                        class="badge <%= user.is_active ? 'bg-success' : 'bg-danger' %>">
+                                                        <%= user.is_active ? 'Active' : 'Inactive' %>
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <%= new Date(user.created_at).toLocaleDateString() %>
+                                                </td>
+                                                <td>
+                                                    <div class="btn-group btn-group-sm" role="group">
+                                                        <a href="/admin/users/<%= user.user_id %>/edit"
+                                                            class="btn btn-outline-primary" title="Edit User">
+                                                            <i class="fas fa-edit" aria-hidden="true"></i>
+                                                        </a>
+                                                        <button type="button" class="btn btn-outline-danger"
+                                                            onclick="confirmDeleteUser('<%= user.user_id %>', '<%= user.full_name %>')"
+                                                            title="Delete User">
+                                                            <i class="fas fa-trash" aria-hidden="true"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            <% }); %>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <% } %>
+                </div>
+            </section>
+
+
+            <!-- Delete User Confirmation Modal -->
+            <div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel"
+                aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header bg-danger text-white">
+                            <h3 class="modal-title" id="deleteUserModalLabel">
+                                <i class="fas fa-exclamation-triangle me-2" aria-hidden="true"></i>Confirm User
+                                Deletion
+                            </h3>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-danger">
+                                <i class="fas fa-warning me-2" aria-hidden="true"></i>
+                                <strong>Warning:</strong> This action cannot be undone!
+                            </div>
+                            <p>Are you sure you want to delete the user <strong id="deleteUserName"></strong>?</p>
+                            <ul class="text-muted">
+                                <li>All user data will be permanently removed</li>
+                                <li>The user will no longer be able to access the system</li>
+                                <li>Any associated records may be affected</li>
+                            </ul>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fas fa-times me-2" aria-hidden="true"></i>Cancel
+                            </button>
+                            <form id="deleteUserForm" method="POST" class="d-inline">
+                                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-times me-2" aria-hidden="true"></i>Yes, Delete User
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+                // Handle delete user modal
+                function confirmDeleteUser(userId, userName) {
+                    document.getElementById('deleteUserName').textContent = userName;
+                    document.getElementById('deleteUserForm').action = `/admin/users/${userId}/delete`;
+
+                    const modal = new bootstrap.Modal(document.getElementById('deleteUserModal'));
+                    modal.show();
+                }
+
+                // Table sorting functionality
+                document.addEventListener('DOMContentLoaded', function () {
+                    const sortableHeaders = document.querySelectorAll('.sortable');
+                    let currentSort = { column: -1, direction: 'asc' };
+
+                    sortableHeaders.forEach(header => {
+                        header.addEventListener('click', function () {
+                            const columnIndex = parseInt(this.dataset.column);
+                            let direction = 'asc';
+
+                            if (currentSort.column === columnIndex && currentSort.direction === 'asc') {
+                                direction = 'desc';
+                            }
+
+                            sortTable(columnIndex, direction);
+                            currentSort = { column: columnIndex, direction };
+                        });
+
+                        // Add keyboard support for sorting
+                        header.addEventListener('keydown', function (e) {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                const columnIndex = parseInt(this.dataset.column);
+                                let direction = 'asc';
+
+                                if (currentSort.column === columnIndex && currentSort.direction === 'asc') {
+                                    direction = 'desc';
+                                }
+
+                                sortTable(columnIndex, direction);
+                                currentSort = { column: columnIndex, direction };
+                            }
+                        });
+
+                        // Make sortable headers focusable
+                        header.setAttribute('tabindex', '0');
+                        header.setAttribute('role', 'button');
+                        header.setAttribute('aria-label', `Sort by ${header.textContent.trim()}`);
+                    });
+
+                    function sortTable(columnIndex, direction) {
+                        const tbody = document.querySelector('.table tbody');
+                        const rows = Array.from(tbody.querySelectorAll('tr'));
+
+                        rows.sort((a, b) => {
+                            // Skip checkbox column (index 0) and adjust for actual data columns
+                            const dataColumnIndex = columnIndex + 1;
+                            let aVal = a.cells[dataColumnIndex].textContent.trim();
+                            let bVal = b.cells[dataColumnIndex].textContent.trim();
+
+                            // Special handling for date column (now column 6 due to checkbox)
+                            if (columnIndex === 5) {
+                                aVal = new Date(aVal);
+                                bVal = new Date(bVal);
+                            } else {
+                                aVal = aVal.toLowerCase();
+                                bVal = bVal.toLowerCase();
+                            }
+
+                            if (direction === 'asc') {
+                                return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+                            } else {
+                                return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
+                            }
+                        });
+
+                        // Clear existing rows and re-append sorted ones
+                        rows.forEach(row => tbody.appendChild(row));
+
+                        // Update sort indicators
+                        document.querySelectorAll('.sortable').forEach(header => {
+                            header.classList.remove('sort-asc', 'sort-desc');
+                        });
+
+                        const header = document.querySelector(`.sortable[data-column="${columnIndex}"]`);
+                        if (header) {
+                            header.classList.add(`sort-${direction}`);
+                        }
+                    }
+
+                    // Bulk operations functionality
+                    const selectAllCheckbox = document.getElementById('selectAllUsers');
+                    const userCheckboxes = document.querySelectorAll('.user-checkbox');
+                    const bulkActions = document.getElementById('bulkActions');
+                    const selectedCount = document.getElementById('selectedCount');
+                    const bulkActivateBtn = document.getElementById('bulkActivate');
+                    const bulkDeactivateBtn = document.getElementById('bulkDeactivate');
+                    const bulkDeleteBtn = document.getElementById('bulkDelete');
+
+                    function updateBulkActions() {
+                        const checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
+                        const count = checkedBoxes.length;
+
+                        if (selectedCount) selectedCount.textContent = count;
+
+                        if (count > 0) {
+                            bulkActions.style.display = 'block';
+                        } else {
+                            bulkActions.style.display = 'none';
+                        }
+
+                        // Update select all checkbox state
+                        const visibleCheckboxes = Array.from(userCheckboxes).filter(cb => {
+                            return cb.closest('tr').style.display !== 'none';
+                        });
+
+                        const checkedVisibleBoxes = visibleCheckboxes.filter(cb => cb.checked);
+
+                        if (selectAllCheckbox) {
+                            selectAllCheckbox.checked = visibleCheckboxes.length > 0 && checkedVisibleBoxes.length === visibleCheckboxes.length;
+                            selectAllCheckbox.indeterminate = checkedVisibleBoxes.length > 0 && checkedVisibleBoxes.length < visibleCheckboxes.length;
+                        }
+                    }
+
+                    // Select all functionality
+                    if (selectAllCheckbox) {
+                        selectAllCheckbox.addEventListener('change', function () {
+                            const visibleCheckboxes = Array.from(userCheckboxes).filter(cb => {
+                                return cb.closest('tr').style.display !== 'none';
+                            });
+
+                            visibleCheckboxes.forEach(cb => {
+                                cb.checked = this.checked;
+                            });
+
+                            updateBulkActions();
+                        });
+                    }
+
+                    // Individual checkbox change events
+                    userCheckboxes.forEach(checkbox => {
+                        checkbox.addEventListener('change', updateBulkActions);
+                    });
+
+                    // Bulk action handlers
+                    if (bulkActivateBtn) {
+                        bulkActivateBtn.addEventListener('click', function () {
+                            const selectedUsers = Array.from(document.querySelectorAll('.user-checkbox:checked')).map(cb => cb.dataset.userId);
+                            if (selectedUsers.length === 0) return;
+
+                            if (confirm(`Are you sure you want to activate ${selectedUsers.length} user(s)?`)) {
+                                // Send POST request to bulk activate
+                                fetch('/admin/users/bulk-activate', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({ userIds: selectedUsers }),
+                                })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.success) {
+                                            alert(`Successfully activated ${selectedUsers.length} user(s)`);
+                                            location.reload();
+                                        } else {
+                                            alert('Error activating users: ' + (data.message || 'Unknown error'));
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.error('Error:', error);
+                                        alert('Error activating users');
+                                    });
+                            }
+                        });
+                    }
+
+                    if (bulkDeactivateBtn) {
+                        bulkDeactivateBtn.addEventListener('click', function () {
+                            const selectedUsers = Array.from(document.querySelectorAll('.user-checkbox:checked')).map(cb => cb.dataset.userId);
+                            if (selectedUsers.length === 0) return;
+
+                            if (confirm(`Are you sure you want to deactivate ${selectedUsers.length} user(s)?`)) {
+                                // Send POST request to bulk deactivate
+                                fetch('/admin/users/bulk-deactivate', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({ userIds: selectedUsers }),
+                                })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.success) {
+                                            alert(`Successfully deactivated ${selectedUsers.length} user(s)`);
+                                            location.reload();
+                                        } else {
+                                            alert('Error deactivating users: ' + (data.message || 'Unknown error'));
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.error('Error:', error);
+                                        alert('Error deactivating users');
+                                    });
+                            }
+                        });
+                    }
+
+                    if (bulkDeleteBtn) {
+                        bulkDeleteBtn.addEventListener('click', function () {
+                            const selectedUsers = Array.from(document.querySelectorAll('.user-checkbox:checked')).map(cb => cb.dataset.userId);
+                            if (selectedUsers.length === 0) return;
+
+                            if (confirm(`Are you sure you want to permanently delete ${selectedUsers.length} user(s)? This action cannot be undone!`)) {
+                                // Send POST request to bulk delete
+                                fetch('/admin/users/bulk-delete', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({ userIds: selectedUsers }),
+                                })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.success) {
+                                            alert(`Successfully deleted ${selectedUsers.length} user(s)`);
+                                            location.reload();
+                                        } else {
+                                            alert('Error deleting users: ' + (data.message || 'Unknown error'));
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.error('Error:', error);
+                                        alert('Error deleting users');
+                                    });
+                            }
+                        });
+                    }
+
+                    // Initial update
+                    updateBulkActions();
+                });
+            </script>
+
+            <%- include('partials/layout-footer') %>

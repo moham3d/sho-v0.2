@@ -1,0 +1,85 @@
+<!-- Functional Assessment -->
+<div class="form-section">
+    <h3><i class="fas fa-wheelchair me-2" aria-hidden="true"></i>Functional Assessment: التقييم الوظيفي</h3>
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label">Feeding Status: حالة التغذية</label>
+            <select class="form-select" name="feeding_status" aria-label="Patient's feeding independence level">
+                <option value="independent" <%=assessment && assessment.feeding_status==='independent' ? 'selected' : ''
+                    %>>Independent: مستقل</option>
+                <option value="needs_supervision" <%=assessment && assessment.feeding_status==='needs_supervision'
+                    ? 'selected' : '' %>>Needs Supervision: يحتاج إلى إشراف</option>
+                <option value="totally_dependent" <%=assessment && assessment.feeding_status==='totally_dependent'
+                    ? 'selected' : '' %>>Totally Dependent: يعتمد كليًا</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Hygiene Status: حالة النظافة</label>
+            <select class="form-select" name="hygiene_status" aria-label="Patient's hygiene independence level">
+                <option value="independent" <%=assessment && assessment.hygiene_status==='independent' ? 'selected' : ''
+                    %>>Independent: مستقل</option>
+                <option value="needs_supervision" <%=assessment && assessment.hygiene_status==='needs_supervision'
+                    ? 'selected' : '' %>>Needs Supervision: يحتاج إلى إشراف</option>
+                <option value="totally_dependent" <%=assessment && assessment.hygiene_status==='totally_dependent'
+                    ? 'selected' : '' %>>Totally Dependent: يعتمد كليًا</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Toileting Status: حالة التبرز</label>
+            <select class="form-select" name="toileting_status" aria-label="Patient's toileting independence level">
+                <option value="independent" <%=assessment && assessment.toileting_status==='independent' ? 'selected'
+                    : '' %>>Independent: مستقل</option>
+                <option value="needs_supervision" <%=assessment && assessment.toileting_status==='needs_supervision'
+                    ? 'selected' : '' %>>Needs Supervision: يحتاج إلى إشراف</option>
+                <option value="totally_dependent" <%=assessment && assessment.toileting_status==='totally_dependent'
+                    ? 'selected' : '' %>>Totally Dependent: يعتمد كليًا</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Ambulation Status: حالة المشي</label>
+            <select class="form-select" name="ambulation_status" aria-label="Patient's walking independence level">
+                <option value="independent" <%=assessment && assessment.ambulation_status==='independent' ? 'selected'
+                    : '' %>>Independent: مستقل</option>
+                <option value="needs_supervision" <%=assessment && assessment.ambulation_status==='needs_supervision'
+                    ? 'selected' : '' %>>Needs Supervision: يحتاج إلى إشراف</option>
+                <option value="totally_dependent" <%=assessment && assessment.ambulation_status==='totally_dependent'
+                    ? 'selected' : '' %>>Totally Dependent: يعتمد كليًا</option>
+            </select>
+        </div>
+        <div class="col-12">
+            <label class="form-label">Assistive Equipment: الأجهزة المساعدة</label>
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="uses_walker" <%=assessment &&
+                            assessment.uses_walker ? 'checked' : '' %> aria-label="Patient uses a walker">
+                        <label class="form-check-label">Walker: مشاية</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="uses_wheelchair" <%=assessment &&
+                            assessment.uses_wheelchair ? 'checked' : '' %> aria-label="Patient uses a wheelchair">
+                        <label class="form-check-label">Wheelchair: كرسي متحرك</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="uses_transfer_device" <%=assessment &&
+                            assessment.uses_transfer_device ? 'checked' : '' %> aria-label="Patient uses a transfer
+                        device">
+                        <label class="form-check-label">Transfer Device: جهاز نقل</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="uses_other_equipment" <%=assessment &&
+                            assessment.uses_other_equipment ? 'checked' : '' %> aria-label="Patient uses other assistive
+                        equipment">
+                        <label class="form-check-label">Other: أخرى</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

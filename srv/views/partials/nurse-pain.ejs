@@ -1,0 +1,32 @@
+<!-- Pain Assessment -->
+<div class="form-section">
+    <h3><i class="fas fa-exclamation-triangle me-2" aria-hidden="true"></i>Pain Assessment</h3>
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label">Pain Intensity (0-10)</label>
+            <input type="range" class="form-range" name="pain_intensity" min="0" max="10"
+                value="<%= assessment ? assessment.pain_intensity : 0 %>"
+                oninput="this.nextElementSibling.value = this.value" aria-label="Pain intensity level" aria-valuemin="0"
+                aria-valuemax="10" aria-valuenow="<%= assessment ? assessment.pain_intensity : 0 %>">
+            <output>
+                <%= assessment ? assessment.pain_intensity : 0 %>
+            </output>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Pain Location</label>
+            <input type="text" class="form-control" name="pain_location"
+                value="<%= assessment ? assessment.pain_location : '' %>" aria-label="Location of patient's pain">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Pain Frequency</label>
+            <input type="text" class="form-control" name="pain_frequency"
+                value="<%= assessment ? assessment.pain_frequency : '' %>" aria-label="Frequency of patient's pain">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Pain Character</label>
+            <input type="text" class="form-control" name="pain_character"
+                value="<%= assessment ? assessment.pain_character : '' %>"
+                aria-label="Description of patient's pain character">
+        </div>
+    </div>
+</div>

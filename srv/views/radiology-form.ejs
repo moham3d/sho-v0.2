@@ -1,0 +1,1062 @@
+<%
+    const patientData = patient || {};
+    const visitData = visit || {};
+    const sessionUser = user || {};
+    const dobValue = patientData.date_of_birth ? new Date(patientData.date_of_birth) : null;
+    const autoAge = dobValue ? Math.max(0, Math.floor((Date.now() - dobValue.getTime()) / (365.25 * 24 * 60 * 60 * 1000))) : '';
+    const formattedDob = dobValue ? dobValue.toISOString().split('T')[0] : '';
+    const todayDate = new Date().toISOString().split('T')[0];
+    const patientGender = patientData.gender || '';
+    const patientMobile = patientData.mobile_number || patientData.phone_number || '';
+    const visitDiagnosis = visitData.primary_diagnosis || '';
+    const radiologistName = sessionUser.fullName || sessionUser.full_name || '';
+%>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radiology Examination Form - Al-Shorouk Radiology Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="/css/custom.css" rel="stylesheet">
+    <style>
+        /* Page-specific wrapper styles */
+        .form-wrapper {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <%- include('navigation', { currentPage: 'radiology-form' }) %>
+
+    <main class="container py-4" id="main-content" role="main">
+        <div class="form-wrapper">
+            <header class="mb-4 text-center">
+                <h1 class="fw-bold text-success mb-1">
+                    <i class="fas fa-x-ray me-2" aria-hidden="true"></i>
+                    Radiology Examination Form
+                    <small class="d-block text-muted">نموذج طلب فحص الأشعة - SH.MR.FRM.03</small>
+                </h1>
+                <p class="text-muted mb-0">Complete the form below to document patient information, examination details, and safety checks قبل إجراء الفحص.</p>
+            </header>
+
+            <% if (patientData && patientData.full_name) { %>
+            <section class="card shadow-sm info-card mb-4">
+                <div class="card-body">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+                        <div>
+                            <h2 class="h5 fw-bold mb-1"><i class="fas fa-user me-2"></i>Patient Overview <span class="text-muted">بيانات المريض</span></h2>
+                            <p class="mb-0 text-muted">Visit ID: <strong><%= visitData.visit_id || 'N/A' %></strong></p>
+                        </div>
+                        <div class="text-end">
+                            <p class="mb-1"><strong>Radiologist:</strong> <%= radiologistName || '—' %></p>
+                            <p class="text-muted mb-0"><i class="far fa-calendar-alt me-1"></i>Form Date: <%= todayDate %></p>
+                        </div>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="p-3 bg-white border rounded-3 h-100">
+                                <p class="mb-1 text-muted">Patient Name / الاسم</p>
+                                <h3 class="h6 fw-semibold mb-0"><%= patientData.full_name %></h3>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 bg-white border rounded-3 h-100">
+                                <p class="mb-1 text-muted">Medical Number / الرقم الطبي</p>
+                                <h3 class="h6 fw-semibold mb-0"><%= patientData.medical_number || '—' %></h3>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 bg-white border rounded-3 h-100">
+                                <p class="mb-1 text-muted">SSN / الرقم القومي</p>
+                                <h3 class="h6 fw-semibold mb-0"><%= patientData.ssn %></h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <% } %>
+
+            <form id="radiologyForm" action="/submit-radiology-form" method="POST" novalidate>
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <% if (visitData && visitData.visit_id) { %>
+                    <input type="hidden" name="visit_id" value="<%= visitData.visit_id %>">
+                <% } %>
+                <% if (patientData && patientData.ssn) { %>
+                    <input type="hidden" name="patient_id" value="<%= patientData.ssn %>">
+                <% } %>
+                <input type="hidden" name="form_number" value="SH.MR.FRM.03">
+                <input type="hidden" name="radiologist_signature" id="radiologistSignatureInput">
+                <input type="hidden" name="patient_signature" id="patientSignatureInput">
+                <input type="hidden" name="form_status" value="completed">
+                <div id="radiologistSignatureData" data-signature="<%- userSignature || '' %>" hidden></div>
+
+                <!-- Form Type Selection -->
+                <section class="form-section">
+                    <div class="section-title">
+                        <h3><i class="fas fa-stethoscope me-2"></i>Examination Type <small class="dual-language">نوع الفحص</small></h3>
+                        <span class="text-muted">Section 1</span>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Form Type <span class="dual-language">نوع النموذج</span> <span class="required-badge">*</span></label>
+                                    <select class="form-select" name="form_type" id="form_type" required>
+                                        <option value="">Select examination type...</option>
+                                        <option value="xray">X-Ray / أشعة سينية</option>
+                                        <option value="ct">CT Scan / أشعة مقطعية</option>
+                                        <option value="mri">MRI / رنين مغناطيسي</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Examination Date <span class="dual-language">تاريخ الفحص</span> <span class="required-badge">*</span></label>
+                                    <input type="date" class="form-control" name="examination_date" id="examination_date" value="<%= todayDate %>" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Patient Complaint <span class="dual-language">شكوى المريض</span> <span class="required-badge">*</span></label>
+                                    <textarea class="form-control" name="patient_complaint" rows="2" placeholder="Describe the patient's chief complaint" required></textarea>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Reason for Examination <span class="dual-language">سبب إجراء الفحص</span> <span class="required-badge">*</span></label>
+                                    <textarea class="form-control" name="reason_for_examination" rows="2" placeholder="Provide the clinical indication" required></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Technical Parameters -->
+                <section class="form-section">
+                    <div class="section-title">
+                        <h3><i class="fas fa-sliders-h me-2"></i>Technical Parameters <small class="dual-language">المعلمات الفنية</small></h3>
+                        <span class="text-muted">Section 2</span>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">CTDIvol</label>
+                                    <input type="text" class="form-control" name="ctd1vol" placeholder="CTDIvol value">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">DLP</label>
+                                    <input type="text" class="form-control" name="dlp" placeholder="DLP value">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">kV</label>
+                                    <input type="text" class="form-control" name="kv" placeholder="kV value">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">mAs</label>
+                                    <input type="text" class="form-control" name="mas" placeholder="mAs value">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Medical History -->
+                <section class="form-section">
+                    <div class="section-title">
+                        <h3><i class="fas fa-history me-2"></i>Medical History <small class="dual-language">التاريخ المرضي</small></h3>
+                        <span class="text-muted">Section 3</span>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <!-- Chronic Diseases -->
+                                <div class="col-12">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="has_chronic_disease" id="has_chronic_disease" value="1">
+                                        <label class="form-check-label fw-semibold" for="has_chronic_disease">
+                                            هل تعاني من أي أمراض مزمنة / Do you have any chronic diseases?
+                                        </label>
+                                    </div>
+                                    <div id="chronicDiseaseSection" style="display: none;">
+                                        <textarea class="form-control" name="chronic_disease_details" id="chronic_disease_details" rows="2" placeholder="Specify chronic diseases..." disabled></textarea>
+                                    </div>
+                                </div>
+
+                                <!-- Current Medications -->
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Current Medications <span class="dual-language">الأدوية الحالية</span></label>
+                                    <textarea class="form-control" name="current_medications" rows="2" placeholder="List current medications with dosages..."></textarea>
+                                </div>
+
+                                <!-- Allergies -->
+                                <div class="col-12">
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" name="has_allergy" id="has_allergy" value="1">
+                                        <label class="form-check-label fw-semibold" for="has_allergy">
+                                            هل تعاني من أي حساسية / Do you have any allergies?
+                                        </label>
+                                    </div>
+                                    <div class="row g-3" id="allergySection" style="display: none;">
+                                        <div class="col-md-4">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="allergy_medication" id="allergy_medication" value="1">
+                                                <label class="form-check-label" for="allergy_medication">Medication / أدوية</label>
+                                            </div>
+                                            <div id="allergyMedicationSection" style="display: none;">
+                                                <textarea class="form-control mt-1" name="allergy_medication_details" rows="2" placeholder="Specify medications..." disabled></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="allergy_food" id="allergy_food" value="1">
+                                                <label class="form-check-label" for="allergy_food">Food / أطعمة</label>
+                                            </div>
+                                            <div id="allergyFoodSection" style="display: none;">
+                                                <textarea class="form-control mt-1" name="allergy_food_details" rows="2" placeholder="Specify foods..." disabled></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="allergy_others" id="allergy_others" value="1">
+                                                <label class="form-check-label" for="allergy_others">Others / أخرى</label>
+                                            </div>
+                                            <div id="allergyOthersSection" style="display: none;">
+                                                <textarea class="form-control mt-1" name="allergy_others_details" rows="2" placeholder="Specify other allergies..." disabled></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Previous Operations -->
+                                <div class="col-12">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="has_previous_operations" id="has_previous_operations" value="1">
+                                        <label class="form-check-label fw-semibold" for="has_previous_operations">
+                                            هل أجريت أي عمليات سابقة / Have you had any previous operations?
+                                        </label>
+                                    </div>
+                                    <div class="row g-3" id="operationSection" style="display: none;">
+                                        <div class="col-md-6">
+                                            <textarea class="form-control" name="operation_details" rows="2" placeholder="Describe operations..." disabled></textarea>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <input type="date" class="form-control" name="operation_date" disabled>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <input type="text" class="form-control" name="operation_reason" placeholder="Reason" disabled>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Tumor History -->
+                                <div class="col-12">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="has_tumor_history" id="has_tumor_history" value="1">
+                                        <label class="form-check-label fw-semibold" for="has_tumor_history">
+                                            هل يوجد تاريخ مرضى لأي أورام / Do you have a history of tumors?
+                                        </label>
+                                    </div>
+                                    <div class="row g-3" id="tumorSection" style="display: none;">
+                                        <div class="col-md-6">
+                                            <input type="text" class="form-control" name="tumor_location" placeholder="Tumor location" disabled>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <input type="text" class="form-control" name="tumor_type" placeholder="Tumor type" disabled>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Previous Investigations -->
+                                <div class="col-12">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="has_previous_investigations" id="has_previous_investigations" value="1">
+                                        <label class="form-check-label fw-semibold" for="has_previous_investigations">
+                                            هل أجريت أي فحوصات أشعة سابقة / Have you had previous radiological investigations?
+                                        </label>
+                                    </div>
+                                    <div class="row g-3" id="investigationSection" style="display: none;">
+                                        <div class="col-md-6">
+                                            <input type="text" class="form-control" name="previous_investigation_type" placeholder="Investigation type" disabled>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <input type="date" class="form-control" name="previous_investigation_date" disabled>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Current Symptoms -->
+                <section class="form-section">
+                    <div class="section-title">
+                        <h3><i class="fas fa-thermometer-half me-2"></i>Current Symptoms <small class="dual-language">الأعراض الحالية</small></h3>
+                        <span class="text-muted">Section 4</span>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <!-- Swelling -->
+                                <div class="col-md-6">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="has_swelling" id="has_swelling" value="1">
+                                        <label class="form-check-label fw-semibold" for="has_swelling">
+                                            هل تعاني من أي تورم / Do you have any swelling?
+                                        </label>
+                                    </div>
+                                    <div id="swellingSection" style="display: none;">
+                                        <input type="text" class="form-control" name="swelling_location" id="swelling_location" placeholder="Location of swelling" disabled>
+                                    </div>
+                                </div>
+
+                                <!-- Fever -->
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="has_fever" id="has_fever" value="1">
+                                        <label class="form-check-label fw-semibold" for="has_fever">
+                                            هل تعاني من ارتفاع درجة الحرارة / Do you have a fever?
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Fall Risk Medications -->
+                                <div class="col-12">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="has_fall_risk_medications" id="has_fall_risk_medications" value="1">
+                                        <label class="form-check-label fw-semibold" for="has_fall_risk_medications">
+                                            هل يتم تناول أدوية تسبب نعاس أو دوار أو عدم اتزان / Are you taking medications that cause drowsiness, dizziness, or imbalance?
+                                        </label>
+                                    </div>
+                                    <div id="fallRiskSection" style="display: none;">
+                                        <textarea class="form-control" name="fall_risk_medication_details" id="fall_risk_medication_details" rows="2" placeholder="Specify medications..." disabled></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Women's Health (Conditional) -->
+                <section class="form-section <%= patientGender === 'female' ? '' : 'd-none' %>" id="womensHealthSection">
+                    <div class="section-title">
+                        <h3><i class="fas fa-female me-2"></i>Women's Health <small class="dual-language">صحة المرأة</small></h3>
+                        <span class="text-muted">Section 5</span>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="is_pregnant" id="is_pregnant" value="1">
+                                        <label class="form-check-label fw-semibold" for="is_pregnant">
+                                            هل يوجد حمل / Are you pregnant?
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="is_lactating" id="is_lactating" value="1">
+                                        <label class="form-check-label fw-semibold" for="is_lactating">
+                                            هل يوجد رضاعة / Are you lactating?
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Medical Devices and Implants -->
+                <section class="form-section">
+                    <div class="section-title">
+                        <h3><i class="fas fa-cogs me-2"></i>Medical Devices & Implants <small class="dual-language">الأجهزة الطبية والزرعات</small></h3>
+                        <span class="text-muted">Section 6</span>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="has_pacemaker" id="has_pacemaker" value="1">
+                                        <label class="form-check-label fw-semibold text-danger" for="has_pacemaker">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>
+                                            هل تم تركيب جهاز منظم لضربات القلب / Do you have a pacemaker?
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="has_cochlear_implant" id="has_cochlear_implant" value="1">
+                                        <label class="form-check-label fw-semibold text-danger" for="has_cochlear_implant">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>
+                                            هل يوجد زراعة القوقعة / Do you have a cochlear implant?
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="has_aneurysmal_clips" id="has_aneurysmal_clips" value="1">
+                                        <label class="form-check-label fw-semibold text-danger" for="has_aneurysmal_clips">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>
+                                            هل يوجد مشابك الأوعية الدموية / Do you have aneurysmal clips?
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="has_intraocular_foreign_body" id="has_intraocular_foreign_body" value="1">
+                                        <label class="form-check-label fw-semibold text-danger" for="has_intraocular_foreign_body">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>
+                                            هل يوجد جسم غريب داخل العين / Do you have an intraocular foreign body?
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="has_surgical_implants" id="has_surgical_implants" value="1">
+                                        <label class="form-check-label fw-semibold" for="has_surgical_implants">
+                                            هل تم تركيب شرائح-مسامير-مفاصل صناعية / Do you have surgical implants (plates, screws, artificial joints)?
+                                        </label>
+                                    </div>
+                                    <div id="surgicalImplantsSection" style="display: none;">
+                                        <textarea class="form-control" name="surgical_implant_details" id="surgical_implant_details" rows="2" placeholder="Specify implants and locations..." disabled></textarea>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Additional Implant Details <span class="dual-language">تفاصيل إضافية عن الزرعات</span></label>
+                                    <textarea class="form-control" name="implant_details" rows="2" placeholder="Any additional information about implants or medical devices..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Gypsum Splint -->
+                <section class="form-section">
+                    <div class="section-title">
+                        <h3><i class="fas fa-band-aid me-2"></i>Gypsum Splint <small class="dual-language">الجبيرة الجبسية</small></h3>
+                        <span class="text-muted">Section 7</span>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="has_gypsum_splint" id="has_gypsum_splint" value="1">
+                                        <label class="form-check-label fw-semibold" for="has_gypsum_splint">
+                                            هل يوجد جبيرة جبس بمكان عمل الأشعة / Is there a gypsum splint in the radiology workplace?
+                                        </label>
+                                    </div>
+                                    <div id="gypsumSection" style="display: none;">
+                                        <textarea class="form-control" name="gypsum_splint_details" id="gypsum_splint_details" rows="2" placeholder="Additional details about the splint..." disabled></textarea>
+                                        <div class="form-text text-muted mt-1">
+                                            في حالة وجود جبيرة الجد من احضار صور الأشعة قبل تركيب الجبيره
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="form-section">
+                    <div class="section-title">
+                        <h3><i class="fas fa-notes-medical me-2"></i>Clinical Safety Checklist <small class="dual-language">قائمة التحقق قبل الفحص</small></h3>
+                        <span class="text-muted">Section 8</span>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="checklist-grid">
+                                <div class="checklist-item">
+                                    <input class="form-check-input mt-1" type="checkbox" id="gypsum_splint_presence" name="gypsum_splint_presence">
+                                    <label class="form-check-label" for="gypsum_splint_presence">Gypsum splint present <span class="dual-language">وجود جبيرة جبس</span></label>
+                                </div>
+                                <div class="checklist-item">
+                                    <input class="form-check-input mt-1" type="checkbox" id="xrays_before_splint" name="xrays_before_splint">
+                                    <label class="form-check-label" for="xrays_before_splint">X-rays before splint <span class="dual-language">صور أشعة قبل تركيب الجبيرة</span></label>
+                                </div>
+                                <div class="checklist-item">
+                                    <input class="form-check-input mt-1" type="checkbox" id="pacemaker" name="pacemaker">
+                                    <label class="form-check-label" for="pacemaker">Pacemaker <span class="dual-language">جهاز منظم ضربات القلب</span></label>
+                                </div>
+                                <div class="checklist-item">
+                                    <input class="form-check-input mt-1" type="checkbox" id="slats_screws_artificial_joints" name="slats_screws_artificial_joints">
+                                    <label class="form-check-label" for="slats_screws_artificial_joints">Metal implants / screws / joints <span class="dual-language">شرائح أو مسامير أو مفاصل صناعية</span></label>
+                                </div>
+                                <div class="checklist-item">
+                                    <input class="form-check-input mt-1" type="checkbox" id="pregnancy_status" name="pregnancy_status">
+                                    <label class="form-check-label" for="pregnancy_status">Pregnancy <span class="dual-language">وجود حمل</span></label>
+                                </div>
+                                <div class="checklist-item">
+                                    <input class="form-check-input mt-1" type="checkbox" id="spinal_deformities" name="spinal_deformities">
+                                    <label class="form-check-label" for="spinal_deformities">Spinal deformities <span class="dual-language">تشوهات العمود الفقري</span></label>
+                                </div>
+                                <div class="checklist-item">
+                                    <input class="form-check-input mt-1" type="checkbox" id="swelling" name="swelling">
+                                    <label class="form-check-label" for="swelling">Swelling <span class="dual-language">تورم</span></label>
+                                </div>
+                                <div class="checklist-item">
+                                    <input class="form-check-input mt-1" type="checkbox" id="fever" name="fever">
+                                    <label class="form-check-label" for="fever">Fever <span class="dual-language">ارتفاع الحرارة</span></label>
+                                </div>
+                                <div class="checklist-item">
+                                    <input class="form-check-input mt-1" type="checkbox" id="tumor_history" name="tumor_history">
+                                    <label class="form-check-label" for="tumor_history">Tumor history <span class="dual-language">تاريخ الإصابة بالأورام</span></label>
+                                </div>
+                                <div class="checklist-item">
+                                    <input class="form-check-input mt-1" type="checkbox" id="disc_problems" name="disc_problems">
+                                    <label class="form-check-label" for="disc_problems">Disc problems <span class="dual-language">مشاكل الانزلاق الغضروفي</span></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="form-section">
+                    <div class="section-title">
+                        <h3><i class="fas fa-clipboard-list me-2"></i>Clinical Notes &amp; History <small class="dual-language">ملاحظات وتاريخ مرضي</small></h3>
+                        <span class="text-muted">Section 9</span>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Chronic diseases <span class="dual-language">أمراض مزمنة</span></label>
+                                    <textarea class="form-control" name="chronic_diseases" rows="2"></textarea>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Pain / numbness symptoms <span class="dual-language">أعراض ألم أو تنميل</span></label>
+                                    <textarea class="form-control" name="pain_numbness" rows="2"></textarea>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Pain / numbness location <span class="dual-language">مكان الألم أو التنميل</span></label>
+                                    <input type="text" class="form-control" name="pain_numbness_location" placeholder="Specify location">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Swelling location <span class="dual-language">مكان التورم</span></label>
+                                    <input type="text" class="form-control" name="swelling_location" placeholder="Specify location">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Neurological symptoms <span class="dual-language">صداع/مشاكل الرؤية أو السمع/عدم الاتزان</span></label>
+                                    <textarea class="form-control" name="headache_visual_troubles_hearing_problems_imbalance" rows="2"></textarea>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Previous operations <span class="dual-language">عمليات جراحية سابقة</span></label>
+                                    <textarea class="form-control" name="previous_operations" rows="2"></textarea>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Tumor location / type <span class="dual-language">مكان أو نوع الورم</span></label>
+                                    <input type="text" class="form-control" name="tumor_location_type">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Previous investigations <span class="dual-language">فحوصات سابقة</span></label>
+                                    <textarea class="form-control" name="previous_investigations" rows="2"></textarea>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Medications increasing fall risk <span class="dual-language">أدوية تسبب دوار أو عدم اتزان</span></label>
+                                    <textarea class="form-control" name="fall_risk_medications" rows="2"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Critical Results -->
+                <section class="form-section">
+                    <div class="section-title">
+                        <h3><i class="fas fa-exclamation-triangle me-2"></i>Critical Results <small class="dual-language">النتائج الحرجة</small></h3>
+                        <span class="text-muted">Section 10</span>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" name="has_critical_result" id="has_critical_result" value="1">
+                                        <label class="form-check-label fw-semibold text-danger" for="has_critical_result">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>
+                                            هل يوجد نتائج حرجة تحتاج إشعار فوري / Are there critical results requiring immediate notification?
+                                        </label>
+                                    </div>
+                                    <div id="criticalResultSection" style="display: none;">
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold">Critical Finding <span class="dual-language">الإيجاد الحرج</span> <span class="required-badge">*</span></label>
+                                                <textarea class="form-control" name="critical_finding" rows="3" placeholder="Describe the critical finding..." disabled></textarea>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold">Clinical Impact <span class="dual-language">التأثير السريري</span> <span class="required-badge">*</span></label>
+                                                <textarea class="form-control" name="clinical_impact" rows="3" placeholder="Describe the clinical impact..." disabled></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Critical Result Notifications -->
+                <div id="notificationSection" style="display: none;">
+                    <section class="form-section">
+                        <div class="section-title">
+                            <h3><i class="fas fa-bell me-2"></i>Critical Result Notifications <small class="dual-language">إشعارات النتائج الحرجة</small></h3>
+                            <span class="text-muted">Section 11</span>
+                        </div>
+                        <div class="card shadow-sm border-danger">
+                            <div class="card-body">
+                                <div class="alert alert-danger mb-3">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <strong>Critical Result Protocol:</strong> Immediate notification required within 60 minutes for life-threatening findings.
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Referring Physician <span class="dual-language">الطبيب المحيل</span> <span class="required-badge">*</span></label>
+                                        <input type="text" class="form-control" name="referring_physician" placeholder="Physician name" disabled>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Contact Method <span class="dual-language">طريقة التواصل</span> <span class="required-badge">*</span></label>
+                                        <select class="form-select" name="contact_method" disabled>
+                                            <option value="">Select contact method...</option>
+                                            <option value="phone">Phone Call / مكالمة هاتفية</option>
+                                            <option value="fax">Fax / فاكس</option>
+                                            <option value="email">Email / بريد إلكتروني</option>
+                                            <option value="pager">Pager / بيجر</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Contact Time <span class="dual-language">وقت التواصل</span> <span class="required-badge">*</span></label>
+                                        <input type="datetime-local" class="form-control" name="contact_time" disabled>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Contact Person <span class="dual-language">الشخص المتصل</span> <span class="required-badge">*</span></label>
+                                        <input type="text" class="form-control" name="contact_person" placeholder="Person who received the notification" disabled>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Critical Result Recording -->
+                <div id="recordingSection" style="display: none;">
+                    <section class="form-section">
+                        <div class="section-title">
+                            <h3><i class="fas fa-file-alt me-2"></i>Critical Result Documentation <small class="dual-language">توثيق النتائج الحرجة</small></h3>
+                            <span class="text-muted">Section 12</span>
+                        </div>
+                        <div class="card shadow-sm border-warning">
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold">Notification Details <span class="dual-language">تفاصيل الإشعار</span> <span class="required-badge">*</span></label>
+                                        <textarea class="form-control" name="notification_details" rows="3" placeholder="Document the notification conversation and response..." disabled></textarea>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Read Back Verification <span class="dual-language">التحقق من القراءة</span></label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="read_back_verified" id="read_back_verified" value="1" disabled>
+                                            <label class="form-check-label" for="read_back_verified">
+                                                Information was read back and verified / تمت قراءة المعلومات والتحقق منها
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Acknowledgment Received <span class="dual-language">تم استلام الإقرار</span></label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="acknowledgment_received" id="acknowledgment_received" value="1" disabled>
+                                            <label class="form-check-label" for="acknowledgment_received">
+                                                Physician acknowledged receipt / أقر الطبيب باستلام المعلومات
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <section class="form-section">
+                    <div class="section-title">
+                        <h3><i class="fas fa-signature me-2"></i>Signatures <small class="dual-language">التوقيعات</small></h3>
+                        <span class="text-muted">Section 13</span>
+                    </div>
+                    <div class="row g-4">
+                        <div class="col-lg-6">
+                            <div class="card shadow-sm h-100">
+                                <div class="card-body">
+                                    <h4 class="h5 fw-semibold mb-2">Patient / Guardian Signature <span class="dual-language">توقيع المريض أو الوصي</span> <span class="required-badge">*</span></h4>
+                                    <p class="text-muted">Capture the patient's signature below before submitting the form.</p>
+                                    <div class="signature-pad mb-3" id="patientSignaturePad" role="img" aria-label="Patient signature pad">
+                                        <canvas id="patientSignatureCanvas"></canvas>
+                                    </div>
+                                    <div class="d-flex flex-wrap gap-2 mb-3">
+                                        <button type="button" class="btn btn-outline-success" id="savePatientSignature">
+                                            <i class="fas fa-check me-2"></i>Save Signature
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary" id="clearPatientSignature">
+                                            <i class="fas fa-eraser me-2"></i>Clear Pad
+                                        </button>
+                                    </div>
+                                    <div class="signature-preview" id="patientSignaturePreview" aria-live="polite"></div>
+                                    <small class="text-muted d-block" id="patientSignatureStatus">Draw inside the box using touch or mouse, then click "Save Signature".</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="card shadow-sm h-100">
+                                <div class="card-body">
+                                    <h4 class="h5 fw-semibold mb-2">Radiologist Signature <span class="dual-language">توقيع الطبيب الإشعاعي</span> <span class="required-badge">*</span></h4>
+                                    <p class="text-muted">Apply your saved signature to authenticate this examination request.</p>
+                                    <div class="d-flex flex-wrap gap-2 mb-3">
+                                        <button type="button" class="btn btn-outline-success" id="applyRadiologistSignature">
+                                            <i class="fas fa-signature me-2"></i>Apply Saved Signature
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary" id="clearRadiologistSignature">
+                                            <i class="fas fa-eraser me-2"></i>Remove Signature
+                                        </button>
+                                    </div>
+                                    <div class="signature-preview" id="radiologistSignaturePreview" aria-live="polite"></div>
+                                    <small class="text-muted d-block" id="radiologistSignatureStatus">Your signature is required before submission.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="text-center mt-5">
+                    <button type="submit" class="btn btn-success btn-lg px-5" aria-label="Submit the completed radiology examination form">
+                        <i class="fas fa-save me-2"></i>Submit Radiology Examination
+                    </button>
+                    <a href="/radiologist" class="btn btn-outline-secondary btn-lg ms-3" aria-label="Return to radiologist dashboard without saving">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script src="/js/signature-utils.js"></script>
+    <script src="/js/form-validation.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const radiologyForm = document.getElementById('radiologyForm');
+            const examinationDateField = document.getElementById('examination_date');
+            const dobField = document.getElementById('date_of_birth');
+            const ageField = document.getElementById('age');
+
+            if (examinationDateField && !examinationDateField.value) {
+                examinationDateField.value = '<%= todayDate %>';
+            }
+
+            function calculateAgeFromDob() {
+                if (!dobField || !ageField) return;
+                const value = dobField.value;
+                if (!value) {
+                    ageField.value = '';
+                    return;
+                }
+                const birthDate = new Date(value);
+                if (Number.isNaN(birthDate.getTime())) {
+                    ageField.value = '';
+                    return;
+                }
+                const today = new Date();
+                let age = today.getFullYear() - birthDate.getFullYear();
+                const monthDiff = today.getMonth() - birthDate.getMonth();
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                    age--;
+                }
+                ageField.value = age >= 0 ? age : '';
+            }
+
+            if (dobField) {
+                dobField.addEventListener('change', calculateAgeFromDob);
+            }
+
+            // Radiologist signature handling
+            const radiologistSignatureDataEl = document.getElementById('radiologistSignatureData');
+            const storedRadiologistSignature = radiologistSignatureDataEl ? radiologistSignatureDataEl.dataset.signature || '' : '';
+            const radiologistSignatureInput = document.getElementById('radiologistSignatureInput');
+            const applyRadiologistSignatureBtn = document.getElementById('applyRadiologistSignature');
+            const clearRadiologistSignatureBtn = document.getElementById('clearRadiologistSignature');
+            const radiologistSignaturePreview = document.getElementById('radiologistSignaturePreview');
+            const radiologistSignatureStatus = document.getElementById('radiologistSignatureStatus');
+
+            function renderSignatureElement(container, signatureData) {
+                container.innerHTML = window.SignatureUtils.renderSignature(signatureData, {
+                    maxHeight: 120,
+                    altText: 'Signature preview'
+                });
+            }
+
+            if (!storedRadiologistSignature || storedRadiologistSignature === 'null') {
+                applyRadiologistSignatureBtn.disabled = true;
+                radiologistSignatureStatus.textContent = 'No saved signature found. Please contact the administrator to register your signature.';
+            } else {
+                applyRadiologistSignatureBtn.addEventListener('click', () => {
+                    radiologistSignatureInput.value = storedRadiologistSignature;
+                    renderSignatureElement(radiologistSignaturePreview, storedRadiologistSignature);
+                    radiologistSignatureStatus.textContent = 'Radiologist signature applied successfully.';
+                });
+            }
+
+            clearRadiologistSignatureBtn.addEventListener('click', () => {
+                radiologistSignatureInput.value = '';
+                radiologistSignaturePreview.innerHTML = '';
+                radiologistSignatureStatus.textContent = 'Radiologist signature cleared. Please apply your signature before submitting.';
+            });
+
+            // Patient signature pad
+            const patientSignatureCanvas = document.getElementById('patientSignatureCanvas');
+            const patientSignaturePad = document.getElementById('patientSignaturePad');
+            const patientSignatureInput = document.getElementById('patientSignatureInput');
+            const savePatientSignatureBtn = document.getElementById('savePatientSignature');
+            const clearPatientSignatureBtn = document.getElementById('clearPatientSignature');
+            const patientSignaturePreview = document.getElementById('patientSignaturePreview');
+            const patientSignatureStatus = document.getElementById('patientSignatureStatus');
+
+            const patientCtx = patientSignatureCanvas.getContext('2d');
+            let isDrawing = false;
+            let hasDrawn = false;
+
+            function setCanvasSize() {
+                const rect = patientSignaturePad.getBoundingClientRect();
+                patientSignatureCanvas.width = rect.width;
+                patientSignatureCanvas.height = patientSignaturePad.offsetHeight;
+                patientCtx.fillStyle = '#ffffff';
+                patientCtx.fillRect(0, 0, patientSignatureCanvas.width, patientSignatureCanvas.height);
+                patientCtx.strokeStyle = '#000000';
+                patientCtx.lineWidth = 2;
+                patientCtx.lineCap = 'round';
+                patientCtx.lineJoin = 'round';
+            }
+
+            function getCanvasCoordinates(event) {
+                const rect = patientSignatureCanvas.getBoundingClientRect();
+                const x = event.clientX !== undefined ? event.clientX : event.touches[0].clientX;
+                const y = event.clientY !== undefined ? event.clientY : event.touches[0].clientY;
+                return {
+                    x: x - rect.left,
+                    y: y - rect.top
+                };
+            }
+
+            function startDrawing(event) {
+                event.preventDefault();
+                isDrawing = true;
+                patientCtx.beginPath();
+                const { x, y } = getCanvasCoordinates(event);
+                patientCtx.moveTo(x, y);
+            }
+
+            function draw(event) {
+                if (!isDrawing) return;
+                event.preventDefault();
+                const { x, y } = getCanvasCoordinates(event);
+                patientCtx.lineTo(x, y);
+                patientCtx.stroke();
+                hasDrawn = true;
+            }
+
+            function stopDrawing(event) {
+                if (!isDrawing) return;
+                event.preventDefault();
+                isDrawing = false;
+            }
+
+            setCanvasSize();
+            window.addEventListener('resize', setCanvasSize);
+
+            patientSignatureCanvas.addEventListener('mousedown', startDrawing);
+            patientSignatureCanvas.addEventListener('mousemove', draw);
+            patientSignatureCanvas.addEventListener('mouseup', stopDrawing);
+            patientSignatureCanvas.addEventListener('mouseleave', stopDrawing);
+
+            patientSignatureCanvas.addEventListener('touchstart', startDrawing, { passive: false });
+            patientSignatureCanvas.addEventListener('touchmove', draw, { passive: false });
+            patientSignatureCanvas.addEventListener('touchend', stopDrawing, { passive: false });
+
+            savePatientSignatureBtn.addEventListener('click', () => {
+                if (!hasDrawn) {
+                    patientSignatureStatus.textContent = 'Please draw the signature before saving.';
+                    return;
+                }
+                const dataUrl = patientSignatureCanvas.toDataURL('image/png');
+                patientSignatureInput.value = dataUrl;
+                renderSignatureElement(patientSignaturePreview, dataUrl);
+                patientSignatureStatus.textContent = 'Patient signature captured successfully.';
+            });
+
+            clearPatientSignatureBtn.addEventListener('click', () => {
+                patientCtx.clearRect(0, 0, patientSignatureCanvas.width, patientSignatureCanvas.height);
+                patientCtx.fillStyle = '#ffffff';
+                patientCtx.fillRect(0, 0, patientSignatureCanvas.width, patientSignatureCanvas.height);
+                patientSignatureInput.value = '';
+                patientSignaturePreview.innerHTML = '';
+                patientSignatureStatus.textContent = 'Signature pad cleared. Draw the signature and click "Save Signature".';
+                hasDrawn = false;
+            });
+
+            radiologyForm.addEventListener('submit', (event) => {
+                if (!radiologistSignatureInput.value) {
+                    event.preventDefault();
+                    radiologistSignatureStatus.textContent = 'Radiologist signature is required. Please apply your signature before submitting.';
+                    applyRadiologistSignatureBtn.focus();
+                    return;
+                }
+
+                if (!patientSignatureInput.value) {
+                    if (hasDrawn) {
+                        const dataUrl = patientSignatureCanvas.toDataURL('image/png');
+                        patientSignatureInput.value = dataUrl;
+                        renderSignatureElement(patientSignaturePreview, dataUrl);
+                    }
+
+                    if (!patientSignatureInput.value) {
+                        event.preventDefault();
+                        patientSignatureStatus.textContent = 'Patient signature is required before submission.';
+                        patientSignaturePad.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        return;
+                    }
+                }
+            });
+
+            // New form functionality for conditional sections
+            function toggleConditionalSection(checkboxId, sectionId) {
+                const checkbox = document.getElementById(checkboxId);
+                const section = document.getElementById(sectionId);
+
+                function updateVisibility() {
+                    if (checkbox.checked) {
+                        section.style.display = 'block';
+                        // Enable inputs in the section
+                        section.querySelectorAll('input, textarea, select').forEach(element => {
+                            if (element !== checkbox) {
+                                element.disabled = false;
+                            }
+                        });
+                    } else {
+                        section.style.display = 'none';
+                        // Disable and clear inputs in the section
+                        section.querySelectorAll('input, textarea, select').forEach(element => {
+                            if (element !== checkbox) {
+                                element.disabled = true;
+                                if (element.type === 'checkbox') {
+                                    element.checked = false;
+                                } else {
+                                    element.value = '';
+                                }
+                            }
+                        });
+                    }
+                }
+
+                checkbox.addEventListener('change', updateVisibility);
+                updateVisibility(); // Initial state
+            }
+
+            // Initialize conditional sections
+            toggleConditionalSection('has_chronic_disease', 'chronicDiseaseSection');
+            toggleConditionalSection('has_allergy', 'allergySection');
+            toggleConditionalSection('allergy_medication', 'allergyMedicationSection');
+            toggleConditionalSection('allergy_food', 'allergyFoodSection');
+            toggleConditionalSection('allergy_others', 'allergyOthersSection');
+            toggleConditionalSection('has_previous_operations', 'operationSection');
+            toggleConditionalSection('has_tumor_history', 'tumorSection');
+            toggleConditionalSection('has_previous_investigations', 'investigationSection');
+            toggleConditionalSection('has_swelling', 'swellingSection');
+            toggleConditionalSection('has_fall_risk_medications', 'fallRiskSection');
+            toggleConditionalSection('has_gypsum_splint', 'gypsumSection');
+            toggleConditionalSection('has_surgical_implants', 'surgicalImplantsSection');
+            toggleConditionalSection('has_critical_result', 'criticalResultSection');
+
+            // Critical result notification sections
+            function toggleCriticalSections() {
+                const hasCritical = document.getElementById('has_critical_result').checked;
+                const notificationSection = document.getElementById('notificationSection');
+                const recordingSection = document.getElementById('recordingSection');
+
+                if (hasCritical) {
+                    notificationSection.style.display = 'block';
+                    recordingSection.style.display = 'block';
+                } else {
+                    notificationSection.style.display = 'none';
+                    recordingSection.style.display = 'none';
+                }
+            }
+
+            document.getElementById('has_critical_result').addEventListener('change', toggleCriticalSections);
+            toggleCriticalSections(); // Initial state
+
+            // Form type change handler for MRI safety warnings
+            document.getElementById('form_type').addEventListener('change', function() {
+                const formType = this.value;
+                const mriWarning = document.getElementById('mriWarning');
+
+                if (formType === 'mri') {
+                    if (!mriWarning) {
+                        const warningDiv = document.createElement('div');
+                        warningDiv.id = 'mriWarning';
+                        warningDiv.className = 'alert alert-danger mt-3';
+                        warningDiv.innerHTML = `
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>MRI Safety Alert:</strong> Please ensure patient has no contraindications including pacemakers, cochlear implants, aneurysmal clips, or intraocular foreign bodies.
+                        `;
+                        this.closest('.card-body').appendChild(warningDiv);
+                    }
+                } else {
+                    if (mriWarning) {
+                        mriWarning.remove();
+                    }
+                }
+            });
+
+            // Form status handling
+            const formStatusBadge = document.getElementById('formStatusBadge');
+            const saveDraftBtn = document.getElementById('saveDraftBtn');
+            const submitBtn = document.getElementById('submitBtn');
+
+            if (saveDraftBtn) {
+                saveDraftBtn.addEventListener('click', function() {
+                    // Set form status to draft
+                    let statusInput = document.querySelector('input[name="form_status"]');
+                    if (!statusInput) {
+                        statusInput = document.createElement('input');
+                        statusInput.type = 'hidden';
+                        statusInput.name = 'form_status';
+                        radiologyForm.appendChild(statusInput);
+                    }
+                    statusInput.value = 'draft';
+                    if (formStatusBadge) {
+                        formStatusBadge.textContent = 'Draft';
+                        formStatusBadge.className = 'badge bg-secondary ms-2';
+                    }
+
+                    // Submit as draft
+                    radiologyForm.submit();
+                });
+            }
+
+            if (submitBtn) {
+                submitBtn.addEventListener('click', function() {
+                    // Set form status to completed
+                    let statusInput = document.querySelector('input[name="form_status"]');
+                    if (!statusInput) {
+                        statusInput = document.createElement('input');
+                        statusInput.type = 'hidden';
+                        statusInput.name = 'form_status';
+                        radiologyForm.appendChild(statusInput);
+                    }
+                    statusInput.value = 'completed';
+                    if (formStatusBadge) {
+                        formStatusBadge.textContent = 'Completed';
+                        formStatusBadge.className = 'badge bg-success ms-2';
+                    }
+                });
+            }
+
+        });
+    </script>
+</body>
+</html>

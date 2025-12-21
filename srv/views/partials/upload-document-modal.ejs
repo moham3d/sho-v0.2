@@ -1,0 +1,206 @@
+<!-- Document Upload Modal -->
+<div class="modal fade" id="uploadDocumentModal" tabindex="-1" aria-labelledby="uploadDocumentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="uploadDocumentModalLabel">
+                    <i class="fas fa-cloud-upload-alt me-2"></i>Upload Visit Document
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="uploadDocumentForm" enctype="multipart/form-data">
+                <input type="hidden" name="_csrf" id="uploadCsrfToken" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+                <div class="modal-body">
+                    <!-- Visit Selection -->
+                    <div class="mb-3">
+                        <label class="form-label">Select Visit *</label>
+                        <select class="form-select" name="visit_id" id="documentVisitSelect" required>
+                            <option value="">-- Select Visit --</option>
+                            <% if (typeof visits !== 'undefined' && visits && visits.length > 0) { %>
+                                <% visits.forEach(visit => { %>
+                                    <option value="<%= visit.visit_id %>">
+                                        <%= visit.patient_name %> - <%= visit.visit_id %> (<%= new Date(visit.visit_date).toLocaleDateString() %>)
+                                    </option>
+                                <% }) %>
+                            <% } %>
+                        </select>
+                        <div class="form-text">Select the visit for which you want to upload documents</div>
+                    </div>
+                    
+                    <!-- File Upload -->
+                    <div class="mb-3">
+                        <label class="form-label">Select Files *</label>
+                        <input type="file" class="form-control" name="documents" id="documentFiles" 
+                               multiple required accept=".pdf,.jpg,.jpeg,.png">
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Max 5 files | 10MB per file | Accepted: PDF, JPG, PNG
+                        </div>
+                        <!-- File preview -->
+                        <div id="filePreview" class="mt-2"></div>
+                    </div>
+                    
+                    <!-- Document Type -->
+                    <div class="mb-3">
+                        <label class="form-label">Document Type *</label>
+                        <select class="form-select" name="document_type" required>
+                            <option value="">-- Select Type --</option>
+                            <option value="lab_report">Lab Report</option>
+                            <option value="medical_record">Previous Medical Record</option>
+                            <option value="referral">Referral Letter</option>
+                            <option value="consent_form">Consent Form</option>
+                            <option value="insurance">Insurance Document</option>
+                            <option value="id_document">ID Document</option>
+                            <option value="prescription">Prescription</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Description -->
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" name="description" id="documentDescription"
+                                  rows="3" placeholder="Brief description of the document(s)..."></textarea>
+                    </div>
+                    
+                    <!-- Tags -->
+                    <div class="mb-3">
+                        <label class="form-label">Tags (Optional)</label>
+                        <input type="text" class="form-control" name="tags" id="documentTags"
+                               placeholder="e.g., urgent, follow-up, pre-op">
+                        <div class="form-text">Comma-separated tags for easy searching</div>
+                    </div>
+                    
+                    <!-- Confidential Flag -->
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" 
+                               name="is_confidential" id="isConfidential" value="1">
+                        <label class="form-check-label" for="isConfidential">
+                            <i class="fas fa-lock me-1"></i>
+                            Mark as confidential (restricted access)
+                        </label>
+                    </div>
+                    
+                    <!-- Upload Progress -->
+                    <div id="uploadProgress" class="alert alert-info d-none">
+                        <i class="fas fa-spinner fa-spin me-2"></i>Uploading documents...
+                        <div class="progress mt-2">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 role="progressbar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Upload Result -->
+                    <div id="uploadResult"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="uploadBtn">
+                        <i class="fas fa-upload me-2"></i>Upload Documents
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// File preview
+document.getElementById('documentFiles').addEventListener('change', function(e) {
+    const fileList = e.target.files;
+    const preview = document.getElementById('filePreview');
+    preview.innerHTML = '';
+    
+    if (fileList.length > 5) {
+        preview.innerHTML = '<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i>Maximum 5 files allowed. Only first 5 will be uploaded.</div>';
+    }
+    
+    for (let i = 0; i < Math.min(fileList.length, 5); i++) {
+        const file = fileList[i];
+        const sizeKB = (file.size / 1024).toFixed(2);
+        const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+        
+        let sizeText = sizeKB < 1024 ? `${sizeKB} KB` : `${sizeMB} MB`;
+        let sizeClass = file.size > 10 * 1024 * 1024 ? 'text-danger' : 'text-success';
+        
+        preview.innerHTML += `
+            <div class="alert alert-light border d-flex justify-content-between align-items-center mb-2">
+                <div>
+                    <i class="fas fa-file me-2"></i><strong>${file.name}</strong>
+                </div>
+                <span class="${sizeClass}">${sizeText}</span>
+            </div>
+        `;
+    }
+});
+
+// Handle form submission
+document.getElementById('uploadDocumentForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const uploadBtn = document.getElementById('uploadBtn');
+    const uploadProgress = document.getElementById('uploadProgress');
+    const uploadResult = document.getElementById('uploadResult');
+    
+    // Show progress
+    uploadBtn.disabled = true;
+    uploadProgress.classList.remove('d-none');
+    uploadResult.innerHTML = '';
+    
+    try {
+        const response = await fetch('/documents/upload', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            uploadResult.innerHTML = `
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle me-2"></i>${data.message}
+                </div>
+            `;
+            
+            // Reset form after 2 seconds
+            setTimeout(() => {
+                document.getElementById('uploadDocumentForm').reset();
+                document.getElementById('filePreview').innerHTML = '';
+                uploadResult.innerHTML = '';
+                
+                // Reload page to update visit list
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            }, 2000);
+        } else {
+            uploadResult.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle me-2"></i>${data.error || 'Upload failed'}
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Upload error:', error);
+        uploadResult.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle me-2"></i>Upload failed. Please try again.
+            </div>
+        `;
+    } finally {
+        uploadBtn.disabled = false;
+        uploadProgress.classList.add('d-none');
+    }
+});
+
+// Reset modal when closed
+document.getElementById('uploadDocumentModal').addEventListener('hidden.bs.modal', function() {
+    document.getElementById('uploadDocumentForm').reset();
+    document.getElementById('filePreview').innerHTML = '';
+    document.getElementById('uploadResult').innerHTML = '';
+    document.getElementById('uploadProgress').classList.add('d-none');
+});
+</script>

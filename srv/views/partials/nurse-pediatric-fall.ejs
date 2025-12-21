@@ -1,0 +1,164 @@
+<!-- Pediatric Fall Risk Assessment -->
+<div class="form-section" id="pediatricFallRiskSection" style="display: none;">
+    <h3><i class="fas fa-child me-2" aria-hidden="true"></i>Pediatric Fall Risk Assessment: تقييم خطر السقوط للأطفال
+    </h3>
+    <div class="alert alert-info">
+        <strong>This assessment is shown for patients under 18 years old.</strong>
+    </div>
+    <div class="row g-3">
+        <!-- Developmental Stage -->
+        <div class="col-md-6">
+            <label class="form-label fw-bold">1. Developmental Stage: مرحلة النمو</label>
+            <div class="form-check">
+                <input class="form-check-input pediatric-radio" type="radio" name="pediatric_developmental_stage"
+                    value="0" <%=assessment && assessment.pediatric_developmental_stage==='0' ? 'checked' : '' %>
+                data-score="0" aria-label="Age appropriate development">
+                <label class="form-check-label">Age Appropriate (0 points): مناسب للعمر</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input pediatric-radio" type="radio" name="pediatric_developmental_stage"
+                    value="1" <%=assessment && assessment.pediatric_developmental_stage==='1' ? 'checked' : '' %>
+                data-score="1" aria-label="Delayed development">
+                <label class="form-check-label">Delayed (1 point): متأخر</label>
+            </div>
+        </div>
+
+        <!-- Activity Level -->
+        <div class="col-md-6">
+            <label class="form-label fw-bold">2. Activity Level: مستوى النشاط</label>
+            <div class="form-check">
+                <input class="form-check-input pediatric-radio" type="radio" name="pediatric_activity_level" value="0"
+                    <%=assessment && assessment.pediatric_activity_level==='0' ? 'checked' : '' %> data-score="0"
+                aria-label="Normal activity level">
+                <label class="form-check-label">Normal (0 points): طبيعي</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input pediatric-radio" type="radio" name="pediatric_activity_level" value="1"
+                    <%=assessment && assessment.pediatric_activity_level==='1' ? 'checked' : '' %> data-score="1"
+                aria-label="Increased activity level">
+                <label class="form-check-label">Increased (1 point): مرتفع</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input pediatric-radio" type="radio" name="pediatric_activity_level" value="2"
+                    <%=assessment && assessment.pediatric_activity_level==='2' ? 'checked' : '' %> data-score="2"
+                aria-label="Decreased activity level">
+                <label class="form-check-label">Decreased (2 points): منخفض</label>
+            </div>
+        </div>
+
+        <!-- Medication Use -->
+        <div class="col-md-6">
+            <label class="form-label fw-bold">3. Medication Use: استخدام الأدوية</label>
+            <div class="form-check">
+                <input class="form-check-input pediatric-radio" type="radio" name="pediatric_medication_use" value="0"
+                    <%=assessment && assessment.pediatric_medication_use==='0' ? 'checked' : '' %> data-score="0"
+                aria-label="No medications affecting balance">
+                <label class="form-check-label">None (0 points): لا شيء</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input pediatric-radio" type="radio" name="pediatric_medication_use" value="1"
+                    <%=assessment && assessment.pediatric_medication_use==='1' ? 'checked' : '' %> data-score="1"
+                aria-label="One medication affecting balance">
+                <label class="form-check-label">One (1 point): واحد</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input pediatric-radio" type="radio" name="pediatric_medication_use" value="2"
+                    <%=assessment && assessment.pediatric_medication_use==='2' ? 'checked' : '' %> data-score="2"
+                aria-label="Multiple medications affecting balance">
+                <label class="form-check-label">Multiple (2 points): متعدد</label>
+            </div>
+        </div>
+
+        <!-- Environmental Factors -->
+        <div class="col-md-6">
+            <label class="form-label fw-bold">4. Environmental Factors: العوامل البيئية</label>
+            <div class="form-check">
+                <input class="form-check-input pediatric-radio" type="radio" name="pediatric_environmental_factors"
+                    value="0" <%=assessment && assessment.pediatric_environmental_factors==='0' ? 'checked' : '' %>
+                data-score="0" aria-label="Safe environment">
+                <label class="form-check-label">Safe (0 points): آمن</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input pediatric-radio" type="radio" name="pediatric_environmental_factors"
+                    value="1" <%=assessment && assessment.pediatric_environmental_factors==='1' ? 'checked' : '' %>
+                data-score="1" aria-label="Moderate risk environment">
+                <label class="form-check-label">Moderate Risk (1 point): خطر متوسط</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input pediatric-radio" type="radio" name="pediatric_environmental_factors"
+                    value="2" <%=assessment && assessment.pediatric_environmental_factors==='2' ? 'checked' : '' %>
+                data-score="2" aria-label="High risk environment">
+                <label class="form-check-label">High Risk (2 points): خطر عالي</label>
+            </div>
+        </div>
+
+        <!-- Previous Falls -->
+        <div class="col-md-6">
+            <label class="form-label fw-bold">5. Previous Falls: السقوط السابق</label>
+            <div class="form-check">
+                <input class="form-check-input pediatric-radio" type="radio" name="pediatric_previous_falls" value="0"
+                    <%=assessment && assessment.pediatric_previous_falls==='0' ? 'checked' : '' %> data-score="0"
+                aria-label="No previous falls">
+                <label class="form-check-label">None (0 points): لا شيء</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input pediatric-radio" type="radio" name="pediatric_previous_falls" value="1"
+                    <%=assessment && assessment.pediatric_previous_falls==='1' ? 'checked' : '' %> data-score="1"
+                aria-label="One previous fall">
+                <label class="form-check-label">One (1 point): واحد</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input pediatric-radio" type="radio" name="pediatric_previous_falls" value="2"
+                    <%=assessment && assessment.pediatric_previous_falls==='2' ? 'checked' : '' %> data-score="2"
+                aria-label="Multiple previous falls">
+                <label class="form-check-label">Multiple (2 points): متعدد</label>
+            </div>
+        </div>
+
+        <!-- Cognitive/Behavioral Factors -->
+        <div class="col-md-6">
+            <label class="form-label fw-bold">6. Cognitive/Behavioral Factors: العوامل المعرفية/السلوكية</label>
+            <div class="form-check">
+                <input class="form-check-input pediatric-radio" type="radio" name="pediatric_cognitive_factors"
+                    value="0" <%=assessment && assessment.pediatric_cognitive_factors==='0' ? 'checked' : '' %>
+                data-score="0" aria-label="Normal cognitive function">
+                <label class="form-check-label">Normal (0 points): طبيعي</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input pediatric-radio" type="radio" name="pediatric_cognitive_factors"
+                    value="1" <%=assessment && assessment.pediatric_cognitive_factors==='1' ? 'checked' : '' %>
+                data-score="1" aria-label="Mild impairment">
+                <label class="form-check-label">Mild Impairment (1 point): ضعف خفيف</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input pediatric-radio" type="radio" name="pediatric_cognitive_factors"
+                    value="2" <%=assessment && assessment.pediatric_cognitive_factors==='2' ? 'checked' : '' %>
+                data-score="2" aria-label="Significant impairment">
+                <label class="form-check-label">Significant Impairment (2 points): ضعف كبير</label>
+            </div>
+        </div>
+
+        <!-- Total Score Display -->
+        <div class="col-12">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Pediatric Fall Risk Total Score</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h2 class="text-primary" id="pediatricTotalScore">0</h2>
+                            <p class="mb-0">Total Points</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h4 class="text-warning" id="pediatricRiskLevel">Low Risk</h4>
+                            <p class="mb-0">Risk Category</p>
+                        </div>
+                    </div>
+                    <input type="hidden" name="pediatric_total_score" id="pediatricTotalScoreInput"
+                        value="<%= assessment ? assessment.pediatric_total_score : 0 %>">
+                    <input type="hidden" name="pediatric_risk_level" id="pediatricRiskLevelInput"
+                        value="<%= assessment ? assessment.pediatric_risk_level : 'Low Risk' %>">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add New Patient - Al-Shorouk Radiology Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/css/custom.css" rel="stylesheet">
+    <style>
+        .navbar-brand {
+            font-weight: bold;
+        }
+        .navbar-brand i {
+            color: #ffffff;
+        }
+        .navbar-nav .nav-link {
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        .navbar-nav .nav-link:hover {
+            color: rgba(255, 255, 255, 0.8) !important;
+        }
+        .navbar-nav .nav-link.active {
+            color: #ffffff !important;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+        }
+        .user-info {
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        .user-role {
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+        .logout-btn {
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+        .logout-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .patient-form-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-custom {
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-size: 1.1em;
+        }
+        .form-control:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+        }
+        .required-field::after {
+            content: " *";
+            color: #ff6b6b;
+        }
+        .error-message {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .ssn-input {
+            font-size: 1.2em;
+            letter-spacing: 2px;
+        }
+        .form-section {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .form-section h3 {
+            color: white;
+            margin-bottom: 15px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+            padding-bottom: 10px;
+        }
+        /* Enhanced relationship input styling */
+        .position-relative.focused .form-control {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        .position-relative small {
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+        .position-relative.focused small {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <%- include('navigation', { currentPage: 'add-patient' }) %>
+
+    <div class="container mt-4" id="main-content" role="main">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="text-center">
+                    <h1><i class="fas fa-user-plus me-2 text-info" aria-hidden="true"></i>Add New Patient</h1>
+                    <p class="text-muted">Register a new patient in the system</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Message -->
+        <% if (error) { %>
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-triangle me-2" aria-hidden="true"></i>
+                        <%= error %>
+                    </div>
+                </div>
+            </div>
+        <% } %>
+
+        <!-- Patient Registration Form -->
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="card patient-form-card">
+                    <div class="card-body p-4">
+                        <h2 class="card-title text-center mb-4">
+                            <i class="fas fa-user-plus me-2" aria-hidden="true"></i>Patient Registration Form
+                        </h2>
+
+                        <form id="addPatientForm" method="POST" action="/nurse/add-patient">
+                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                            <!-- Basic Information -->
+                            <div class="form-section">
+                                <h3><i class="fas fa-id-card me-2" aria-hidden="true"></i>Basic Information</h3>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="ssn" class="form-label required-field">Social Security Number (SSN)</label>
+                                        <input type="text" class="form-control form-control-lg ssn-input text-center"
+                                               id="ssn" name="ssn" placeholder="14-digit SSN"
+                                               value="<%= prefilledSSN %>"
+                                               pattern="\d{14}" maxlength="14" required aria-label="14-digit Egyptian Social Security Number" aria-describedby="ssnHelp">
+                                        <div class="form-text text-center" id="ssnHelp">
+                                            <small>14-digit Egyptian SSN (e.g., 28308191300293)</small>
+                                        </div>
+                                        <div class="invalid-feedback">
+                                            Please enter a valid 14-digit SSN
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="full_name" class="form-label required-field">Full Name</label>
+                                        <input type="text" class="form-control form-control-lg" id="full_name"
+                                               name="full_name" placeholder="Enter patient's full name" required aria-label="Patient's complete legal name" aria-describedby="nameHelp">
+                                        <div class="form-text" id="nameHelp">
+                                            <small>Patient's complete legal name</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label for="date_of_birth" class="form-label required-field">Date of Birth</label>
+                                        <input type="date" class="form-control form-control-lg" id="date_of_birth"
+                                               name="date_of_birth" readonly aria-label="Patient's date of birth" aria-describedby="dobHelp">
+                                        <div class="form-text" id="dobHelp">
+                                            <small>Auto-calculated from SSN</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="age" class="form-label">Age</label>
+                                        <input type="number" class="form-control form-control-lg" id="age"
+                                               name="age" readonly aria-label="Patient's current age in years" aria-describedby="ageHelp">
+                                        <div class="form-text" id="ageHelp">
+                                            <small>Auto-calculated from SSN</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="gender" class="form-label required-field">Gender</label>
+                                        <select class="form-select form-select-lg" id="gender" name="gender" required aria-label="Patient's gender" aria-describedby="genderHelp">
+                                            <option value="">Select Gender</option>
+                                            <option value="male">Male</option>
+                                            <option value="female">Female</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                        <div class="form-text" id="genderHelp">
+                                            <small>Select patient's gender</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Contact Information -->
+                            <div class="form-section">
+                                <h3><i class="fas fa-phone me-2" aria-hidden="true"></i>Contact Information</h3>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="mobile_number" class="form-label required-field">Mobile Number</label>
+                                        <input type="tel" class="form-control form-control-lg" id="mobile_number"
+                                               name="mobile_number" placeholder="01XXXXXXXXX" required aria-label="Patient's primary mobile phone number" aria-describedby="mobileHelp">
+                                        <div class="form-text" id="mobileHelp">
+                                            <small>Patient's primary mobile number</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="phone_number" class="form-label">Phone Number</label>
+                                        <input type="tel" class="form-control form-control-lg" id="phone_number"
+                                               name="phone_number" placeholder="02XXXXXXXXX" aria-label="Patient's additional phone number" aria-describedby="phoneHelp">
+                                        <div class="form-text" id="phoneHelp">
+                                            <small>Additional phone number (landline, work, etc.)</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="address" class="form-label">Address</label>
+                                    <textarea class="form-control" id="address" name="address" rows="3"
+                                              placeholder="Enter patient's full address" aria-label="Patient's complete residential address" aria-describedby="addressHelp"></textarea>
+                                    <div class="form-text" id="addressHelp">
+                                        <small>Patient's residential address</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Medical Information -->
+                            <div class="form-section">
+                                <h3><i class="fas fa-stethoscope me-2" aria-hidden="true"></i>Medical Information</h3>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="medical_number" class="form-label">Medical Number</label>
+                                        <input type="text" class="form-control form-control-lg" id="medical_number"
+                                               name="medical_number" placeholder="MEDXXXXXX" aria-label="Hospital or medical record number" aria-describedby="medicalHelp">
+                                        <div class="form-text" id="medicalHelp">
+                                            <small>Hospital/medical record number if available</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Emergency Contact -->
+                            <div class="form-section">
+                                <h3><i class="fas fa-user-friends me-2" aria-hidden="true"></i>Emergency Contact</h3>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="emergency_contact_name" class="form-label">Emergency Contact Name</label>
+                                        <input type="text" class="form-control form-control-lg" id="emergency_contact_name"
+                                               name="emergency_contact_name" placeholder="Full name of emergency contact" aria-label="Full name of emergency contact person" aria-describedby="emergencyNameHelp">
+                                        <div class="form-text" id="emergencyNameHelp">
+                                            <small>Name of person to contact in case of emergency</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="emergency_contact_relation" class="form-label">Relationship</label>
+                                        <div class="position-relative">
+                                            <input type="text" class="form-control form-control-lg" id="emergency_contact_relation"
+                                                   name="emergency_contact_relation" placeholder="Type to search relationship..."
+                                                   list="relationship-options" autocomplete="off"
+                                                   aria-label="Relationship of emergency contact to patient" aria-describedby="emergencyRelationHelp">
+                                            <datalist id="relationship-options">
+                                                <!-- Immediate Family -->
+                                                <option value="Spouse">
+                                                <option value="Father">
+                                                <option value="Mother">
+                                                <option value="Son">
+                                                <option value="Daughter">
+                                                <!-- Extended Family -->
+                                                <option value="Brother">
+                                                <option value="Sister">
+                                                <option value="Grandfather">
+                                                <option value="Grandmother">
+                                                <option value="Uncle">
+                                                <option value="Aunt">
+                                                <option value="Cousin">
+                                                <!-- Other Relationships -->
+                                                <option value="Friend">
+                                                <option value="Neighbor">
+                                                <option value="Colleague">
+                                                <option value="Guardian">
+                                                <option value="Other">
+                                            </datalist>
+                                            <small class="text-muted position-absolute top-100 start-0 mt-1">
+                                                <i class="fas fa-search me-1"></i>Start typing to filter options
+                                            </small>
+                                        </div>
+                                        <div class="form-text" id="emergencyRelationHelp">
+                                            <small>Relationship to the patient (searchable dropdown)</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="emergency_contact_phone" class="form-label">Emergency Contact Phone</label>
+                                    <input type="tel" class="form-control form-control-lg" id="emergency_contact_phone"
+                                           name="emergency_contact_phone" placeholder="01XXXXXXXXX" aria-label="Phone number of emergency contact" aria-describedby="emergencyPhoneHelp">
+                                    <div class="form-text" id="emergencyPhoneHelp">
+                                        <small>Phone number of emergency contact</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Form Actions -->
+                            <div class="text-center mt-4">
+                                <button type="submit" class="btn btn-success btn-custom me-3" aria-label="Save patient information and start assessment">
+                                    <i class="fas fa-save me-2" aria-hidden="true"></i>Save Patient & Start Assessment
+                                </button>
+                                <a href="/nurse/search-patient" class="btn btn-secondary btn-custom" aria-label="Return to patient search page">
+                                    <i class="fas fa-arrow-left me-2" aria-hidden="true"></i>Back to Search
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card" role="complementary" aria-label="Patient registration instructions">
+                    <div class="card-body">
+                        <h3 class="card-title">
+                            <i class="fas fa-info-circle me-2" aria-hidden="true"></i>What Happens Next?
+                        </h3>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-id-card text-primary me-2" aria-hidden="true"></i>Egyptian SSN Format</h6>
+                                <ul class="text-muted">
+                                    <li>14-digit number (no hyphens or spaces)</li>
+                                    <li>First digit: Governorate code</li>
+                                    <li>Next 2 digits: Year of birth</li>
+                                    <li>Next 2 digits: Month of birth</li>
+                                    <li>Next 2 digits: Day of birth</li>
+                                    <li>Last 7 digits: Unique ID number</li>
+                                    <li><strong>Example:</strong> 28308191300293</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-calculator text-success me-2" aria-hidden="true"></i>Auto-Calculated Fields</h6>
+                                <ul class="text-muted">
+                                    <li>Date of birth automatically calculated from SSN</li>
+                                    <li>Age automatically calculated and updated</li>
+                                    <li>Invalid SSN dates will show validation errors</li>
+                                    <li>All fields are validated before submission</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Egyptian SSN parsing functions
+        function parseEgyptianSSN(ssn) {
+            if (!ssn || ssn.length !== 14 || !/^\d{14}$/.test(ssn)) {
+                return null;
+            }
+
+            const governorateCode = ssn.substring(0, 1);
+            const year = parseInt(ssn.substring(1, 3));
+            const month = parseInt(ssn.substring(3, 5));
+            const day = parseInt(ssn.substring(5, 7));
+
+            // Determine century - Egyptian SSNs use 1900s for years 00-99, but we need to handle current century properly
+            const currentYear = new Date().getFullYear();
+            const currentCentury = Math.floor(currentYear / 100) * 100;
+            const previousCentury = currentCentury - 100;
+
+            let fullYear;
+            if (year > (currentYear - 2000)) {
+                fullYear = previousCentury + year;
+            } else {
+                fullYear = currentCentury + year;
+            }
+
+            // Validate date components
+            if (month < 1 || month > 12 || day < 1 || day > 31) {
+                return null;
+            }
+
+            // Check for valid date (accounting for different month lengths)
+            const daysInMonth = new Date(fullYear, month, 0).getDate();
+            if (day > daysInMonth) {
+                return null;
+            }
+
+            // Create date object for age calculation
+            const birthDate = new Date(fullYear, month - 1, day);
+
+            return {
+                governorateCode: governorateCode,
+                birthDate: birthDate,
+                age: calculateAge(birthDate)
+            };
+        }
+
+        function calculateAge(birthDate) {
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const monthDiff = today.getMonth() - birthDate.getMonth();
+
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+
+            return age;
+        }
+
+        // SSN input handler
+        document.getElementById('ssn').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, ''); // Remove any non-digit characters
+            // Limit to 14 digits
+            if (value.length > 14) {
+                value = value.slice(0, 14);
+            }
+            e.target.value = value;
+
+            // Auto-populate DOB and age if SSN is valid
+            if (value.length === 14) {
+                const parsed = parseEgyptianSSN(value);
+                if (parsed) {
+                    // Format date as YYYY-MM-DD
+                    const year = parsed.birthDate.getFullYear();
+                    const month = (parsed.birthDate.getMonth() + 1).toString().padStart(2, '0');
+                    const day = parsed.birthDate.getDate().toString().padStart(2, '0');
+                    const dateString = `${year}-${month}-${day}`;
+                    
+                    document.getElementById('date_of_birth').value = dateString;
+                    document.getElementById('age').value = parsed.age;
+                    e.target.classList.remove('is-invalid');
+                } else {
+                    document.getElementById('date_of_birth').value = '';
+                    document.getElementById('age').value = '';
+                    e.target.classList.add('is-invalid');
+                }
+            } else {
+                document.getElementById('date_of_birth').value = '';
+                document.getElementById('age').value = '';
+                e.target.classList.remove('is-invalid');
+            }
+        });
+
+        // Validate SSN format on blur
+        document.getElementById('ssn').addEventListener('blur', function(e) {
+            const ssnPattern = /^\d{14}$/;
+            if (e.target.value && !ssnPattern.test(e.target.value)) {
+                e.target.classList.add('is-invalid');
+            } else if (e.target.value.length === 14) {
+                const parsed = parseEgyptianSSN(e.target.value);
+                if (!parsed) {
+                    e.target.classList.add('is-invalid');
+                }
+            }
+        });
+
+        // Auto-format phone inputs (allow only digits)
+        ['mobile_number', 'phone_number', 'emergency_contact_phone'].forEach(function(id) {
+            document.getElementById(id).addEventListener('input', function(e) {
+                // Remove any non-digit characters
+                let value = e.target.value.replace(/\D/g, '');
+                e.target.value = value;
+            });
+        });
+
+        // Focus on SSN input and check for query parameter when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('ssn').focus();
+
+            // Check for SSN query parameter and pre-fill the field
+            const urlParams = new URLSearchParams(window.location.search);
+            const ssnParam = urlParams.get('ssn');
+            if (ssnParam) {
+                document.getElementById('ssn').value = ssnParam;
+                // Trigger the input event to auto-populate DOB and age
+                document.getElementById('ssn').dispatchEvent(new Event('input'));
+            }
+
+            // Enhance relationship input with better UX
+            initializeRelationshipSearch();
+        });
+
+        // Initialize relationship search functionality
+        function initializeRelationshipSearch() {
+            const relationInput = document.getElementById('emergency_contact_relation');
+            const datalist = document.getElementById('relationship-options');
+            const helpText = document.getElementById('emergencyRelationHelp');
+
+            // Add input event listener for better UX feedback
+            relationInput.addEventListener('input', function(e) {
+                const value = e.target.value.toLowerCase();
+                const options = datalist.querySelectorAll('option');
+                let hasMatches = false;
+
+                // Check if any options match the current input
+                options.forEach(option => {
+                    if (option.value.toLowerCase().includes(value)) {
+                        hasMatches = true;
+                    }
+                });
+
+                // Update help text based on input
+                if (value.length > 0) {
+                    if (hasMatches) {
+                        helpText.innerHTML = '<small class="text-success"><i class="fas fa-check-circle me-1"></i>Matching relationships found - use arrow keys to navigate</small>';
+                    } else {
+                        helpText.innerHTML = '<small class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>No matches found - you can still enter custom relationship</small>';
+                    }
+                } else {
+                    helpText.innerHTML = '<small>Relationship to the patient (searchable dropdown)</small>';
+                }
+            });
+
+            // Add focus/blur events for better visual feedback
+            relationInput.addEventListener('focus', function() {
+                this.parentElement.classList.add('focused');
+            });
+
+            relationInput.addEventListener('blur', function() {
+                this.parentElement.classList.remove('focused');
+                // Reset help text after a short delay
+                setTimeout(() => {
+                    helpText.innerHTML = '<small>Relationship to the patient (searchable dropdown)</small>';
+                }, 2000);
+            });
+
+            // Add keyboard navigation hints
+            relationInput.addEventListener('keydown', function(e) {
+                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                    // Show hint that datalist is active
+                    helpText.innerHTML = '<small class="text-info"><i class="fas fa-arrow-down me-1"></i>Use arrow keys to navigate options</small>';
+                } else if (e.key === 'Enter' && this.value.trim()) {
+                    // Validate on enter
+                    const options = Array.from(datalist.querySelectorAll('option')).map(opt => opt.value);
+                    if (!options.includes(this.value)) {
+                        helpText.innerHTML = '<small class="text-info"><i class="fas fa-info-circle me-1"></i>Custom relationship will be saved</small>';
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
