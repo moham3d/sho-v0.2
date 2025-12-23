@@ -1,11 +1,26 @@
 const net = require('net');
 const uuid = require('uuid');
 const fs = require('fs');
-const hl7 = require('simple-hl7');
+
+/**
+ * HL7 Configuration
+ * Adjust these indices based on Vendor specifications
+ * Note: Arrays are 0-indexed, so Field 3 is index 3 in our split array (because index 0 is the segment name)
+ */
+const HL7_CONFIG = {
+    PATIENT_SSN_INDEX: 3,      // PID-3: Patient Identifier List
+    PATIENT_NAME_INDEX: 5,     // PID-5: Patient Name
+    PATIENT_DOB_INDEX: 7,      // PID-7: Date of Birth
+    PATIENT_GENDER_INDEX: 8,   // PID-8: Sex
+    PATIENT_ADDRESS_INDEX: 11, // PID-11: Address
+    ORDER_PLACER_NUM_INDEX: 2, // OBR-2: Placer Order Number
+    PROCEDURE_CODE_INDEX: 4,   // OBR-4: Universal Service ID
+    REASON_FOR_EXAM_INDEX: 13  // OBR-13: Relevant Clinical Info
+};
 
 /**
  * HL7 Service for Al-Shorouk Radiology System
- * Uses simple-hl7 library for robust message parsing
+ * Uses custom robust parsing logic
  */
 
 /**
@@ -22,281 +37,143 @@ function mapGender(hl7Gender) {
     }
 }
 
-/**
- * Parse patient name from HL7 format (LAST^FIRST^MIDDLE)
- */
-function parsePatientName(nameField) {
-    if (!nameField) return '';
-    // Handle both string and object formats from simple-hl7
-    if (typeof nameField === 'object') {
-        const lastName = nameField[1] || nameField.familyName || '';
-        const firstName = nameField[2] || nameField.givenName || '';
-        return `${lastName} ${firstName}`.trim();
-    }
-    const parts = nameField.split('^');
-    return `${parts[0] || ''} ${parts[1] || ''}`.trim();
-}
+
+
+
 
 /**
- * Get field value from segment, handling simple-hl7 format
- */
-function getField(segment, fieldIndex, componentIndex = 0) {
-    if (!segment) return '';
-    const field = segment.fields[fieldIndex];
-    if (!field) return '';
-    if (typeof field === 'string') return field;
-    if (Array.isArray(field)) {
-        return componentIndex > 0 ? (field[componentIndex - 1] || '') : field[0] || '';
-    }
-    if (typeof field === 'object') {
-        return Object.values(field)[componentIndex] || '';
-    }
-    return String(field);
-}
-
-/**
- * Handle ADT Patient Messages (A01/A08)
- */
-function handleADTPatient(message, db) {
-    try {
-        const pid = message.getSegment('PID');
-        if (!pid) {
-            console.error('No PID segment found in ADT message');
-            return;
-        }
-
-        // Extract patient data from PID segment
-        const ssn = getField(pid, 3); // PID.3 - Patient ID
-        const patientName = getField(pid, 5); // PID.5 - Patient Name
-        const dob = getField(pid, 7); // PID.7 - Date of Birth
-        const gender = getField(pid, 8); // PID.8 - Gender
-        const address = getField(pid, 11); // PID.11 - Address
-
-        // Parse patient name
-        const fullName = parsePatientName(pid.fields[5]);
-        const dbGender = mapGender(gender);
-
-        // Validate SSN (14-digit Egyptian SSN)
-        if (!ssn || ssn.length !== 14) {
-            console.error('Invalid SSN format:', ssn, '(expected 14 digits)');
-            return;
-        }
-
-        console.log(`[HL7] Processing ADT patient: ${fullName} (SSN: ${ssn})`);
-
-        // Insert or update patient
-        db.run(`
-            INSERT OR REPLACE INTO patients (ssn, mobile_number, full_name, date_of_birth, gender, address)
-            VALUES (?, ?, ?, ?, ?, ?)
-        `, [ssn, 'N/A', fullName, dob, dbGender, address], (err) => {
-            if (err) {
-                console.error('[HL7] Error updating patient:', err.message);
-            } else {
-                console.log('[HL7] Patient updated successfully:', ssn);
-            }
-        });
-    } catch (err) {
-        console.error('[HL7] Error handling ADT message:', err.message);
-    }
-}
-
-/**
- * Handle ORM Order Messages (O01)
- */
-function handleORMOrder(message, db) {
-    try {
-        const pid = message.getSegment('PID');
-        const obr = message.getSegment('OBR');
-
-        if (!pid || !obr) {
-            console.error('[HL7] Missing PID or OBR segment in ORM message');
-            return;
-        }
-
-        // Extract data
-        const ssn = getField(pid, 3); // PID.3 - Patient ID
-        const placerOrderNumber = getField(obr, 2); // OBR.2 - Placer Order Number
-        const procedureCode = getField(obr, 4); // OBR.4 - Universal Service ID
-        const reasonForExam = getField(obr, 13); // OBR.13 - Relevant Clinical Info
-
-        // Parse procedure description (may be in format CODE^DESCRIPTION)
-        let procedureDesc = procedureCode;
-        if (typeof obr.fields[4] === 'object' || procedureCode.includes('^')) {
-            const parts = procedureCode.split('^');
-            procedureDesc = parts[1] || parts[0] || procedureCode;
-        }
-
-        // Validate SSN
-        if (!ssn || ssn.length !== 14) {
-            console.error('[HL7] Invalid SSN format in ORM:', ssn);
-            return;
-        }
-
-        console.log(`[HL7] Processing ORM order: ${placerOrderNumber} for patient ${ssn}, procedure: ${procedureDesc}`);
-
-        // Check for existing open visit (prevent duplicates)
-        db.get(`
-            SELECT visit_id FROM patient_visits 
-            WHERE patient_ssn = ? AND visit_status IN ('open', 'in_progress') 
-            AND primary_diagnosis = ?
-        `, [ssn, reasonForExam || procedureDesc], (err, existingVisit) => {
-            if (err) {
-                console.error('[HL7] Error checking for existing visit:', err.message);
-                return;
-            }
-
-            if (existingVisit) {
-                console.log('[HL7] Open visit already exists for patient:', ssn, '- skipping duplicate');
-                return;
-            }
-
-            // Generate a UUID for the visit
-            const visitId = uuid.v4();
-
-            // Create visit with HL7 data
-            db.run(`
-                INSERT INTO patient_visits (
-                    visit_id, patient_ssn, visit_status, primary_diagnosis,
-                    visit_type, department, created_by
-                ) VALUES (?, ?, 'open', ?, 'outpatient', 'radiology', 'hl7-system')
-            `, [visitId, ssn, reasonForExam || procedureDesc], function (err) {
-                if (err) {
-                    console.error('[HL7] Error creating visit:', err.message);
-                } else {
-                    console.log('[HL7] Visit created:', visitId, 'Patient:', ssn, 'Procedure:', procedureDesc);
-                }
-            });
-        });
-    } catch (err) {
-        console.error('[HL7] Error handling ORM message:', err.message);
-    }
-}
-
-/**
- * Process HL7 Message using simple-hl7 parser
+ * Process HL7 Message
+ * Uses robust manual parsing to ensure compatibility
  */
 function processHL7Message(rawMessage, db) {
     console.log('[HL7] Processing message...');
-
-    try {
-        // Parse the HL7 message using simple-hl7
-        const parser = new hl7.Parser();
-        const message = parser.parse(rawMessage);
-
-        // Get message type from MSH segment
-        const msh = message.getSegment('MSH');
-        if (!msh) {
-            console.error('[HL7] No MSH segment found');
-            return false;
-        }
-
-        const messageType = getField(msh, 9);
-        const parts = messageType.split('^');
-        const type = parts[0] || '';
-        const triggerEvent = parts[1] || '';
-
-        console.log('[HL7] Message type:', type, 'Trigger event:', triggerEvent);
-
-        // Route message to appropriate handler
-        if (type === 'ADT' && (triggerEvent === 'A01' || triggerEvent === 'A08')) {
-            handleADTPatient(message, db);
-            return true;
-        } else if (type === 'ORM' && triggerEvent === 'O01') {
-            handleORMOrder(message, db);
-            return true;
-        } else {
-            console.log('[HL7] Unhandled message type:', type, '^', triggerEvent);
-            return true; // Still acknowledge the message
-        }
-    } catch (err) {
-        console.error('[HL7] Error parsing message:', err.message);
-        // Fall back to manual parsing for compatibility
-        return processHL7MessageManual(rawMessage, db);
-    }
+    return processHL7MessageManual(rawMessage, db);
 }
 
 /**
- * Fallback manual parsing for non-standard messages
+ * Robust HL7 Message Parser
  */
 function processHL7MessageManual(message, db) {
-    console.log('[HL7] Falling back to manual parsing...');
+    // Normalize newlines to \r
+    const normalizedMessage = message.replace(/\n/g, '\r');
+    const segments = normalizedMessage.split('\r').filter(s => s.trim().length > 0);
 
-    const segments = message.split('\r');
     const mshSegment = segments.find(s => s.startsWith('MSH|'));
-    const pidSegment = segments.find(s => s.startsWith('PID|'));
-    const pv1Segment = segments.find(s => s.startsWith('PV1|'));
-    const obrSegment = segments.find(s => s.startsWith('OBR|'));
 
     if (!mshSegment) {
-        console.error('[HL7] No MSH segment found in manual parse');
+        console.error('[HL7] No MSH segment found');
         return false;
     }
 
     const mshFields = mshSegment.split('|');
     const messageType = mshFields[8] || '';
-    const triggerEvent = messageType.split('^')[1] || '';
 
-    console.log('[HL7] Manual parse - Message type:', messageType, 'Trigger:', triggerEvent);
+    // Handle message type (e.g., ADT^A01)
+    let type = '';
+    let triggerEvent = '';
 
-    if (messageType.startsWith('ADT') && (triggerEvent === 'A01' || triggerEvent === 'A08')) {
-        handleADTPatientManual(pidSegment, pv1Segment, db);
-        return true;
-    } else if (messageType.startsWith('ORM') && triggerEvent === 'O01') {
-        handleORMOrderManual(pidSegment, obrSegment, db);
-        return true;
+    if (messageType.includes('^')) {
+        const parts = messageType.split('^');
+        type = parts[0];
+        triggerEvent = parts[1];
+    } else {
+        type = messageType;
     }
 
-    return true;
+    console.log('[HL7] Message type:', type, 'Trigger:', triggerEvent);
+
+    if (type === 'ADT' && (triggerEvent === 'A01' || triggerEvent === 'A08')) {
+        handleADTPatientManual(segments, db);
+        return true;
+    } else if (type === 'ORM' && triggerEvent === 'O01') {
+        handleORMOrderManual(segments, db);
+        return true;
+    } else {
+        console.log('[HL7] Unhandled message type:', type, '^', triggerEvent);
+        return true; // Acknowledge receipt even if unhandled
+    }
 }
 
 /**
- * Manual ADT handler (fallback)
+ * Handle ADT Patient (Manual Parse)
  */
-function handleADTPatientManual(pidSegment, pv1Segment, db) {
+function handleADTPatientManual(segments, db) {
+    const pidSegment = segments.find(s => s.startsWith('PID|'));
     if (!pidSegment) return;
 
     const pidFields = pidSegment.split('|');
-    const ssn = pidFields[3] || '';
-    const patientName = pidFields[5] || '';
-    const dob = pidFields[7] || '';
-    const gender = pidFields[8] || '';
-    const address = pidFields[11] || '';
+    const ssn = pidFields[HL7_CONFIG.PATIENT_SSN_INDEX] || '';
+    const patientName = pidFields[HL7_CONFIG.PATIENT_NAME_INDEX] || '';
+    const dob = pidFields[HL7_CONFIG.PATIENT_DOB_INDEX] || '';
+    const gender = pidFields[HL7_CONFIG.PATIENT_GENDER_INDEX] || '';
+    const address = pidFields[HL7_CONFIG.PATIENT_ADDRESS_INDEX] || '';
 
-    const nameParts = patientName.split('^');
-    const fullName = `${nameParts[0] || ''} ${nameParts[1] || ''}`.trim();
+    let fullName = patientName;
+    if (patientName.includes('^')) {
+        const nameParts = patientName.split('^');
+        // LAST^FIRST^MIDDLE -> First Last
+        fullName = `${nameParts[1] || ''} ${nameParts[0] || ''}`.trim();
+    }
+
     const dbGender = mapGender(gender);
 
-    if (!ssn || ssn.length !== 14) return;
+    if (!ssn || ssn.length !== 14) {
+        console.error('[HL7] Invalid SSN format:', ssn);
+        return;
+    }
+
+    console.log(`[HL7] Processing ADT patient: ${fullName} (SSN: ${ssn})`);
 
     db.run(`
         INSERT OR REPLACE INTO patients (ssn, mobile_number, full_name, date_of_birth, gender, address)
         VALUES (?, ?, ?, ?, ?, ?)
-    `, [ssn, 'N/A', fullName, dob, dbGender, address]);
+    `, [ssn, 'N/A', fullName, dob, dbGender, address], (err) => {
+        if (err) console.error('[HL7] Error updating patient:', err.message);
+        else console.log('[HL7] Patient updated:', ssn);
+    });
 }
 
 /**
- * Manual ORM handler (fallback)
+ * Handle ORM Order (Manual Parse)
  */
-function handleORMOrderManual(pidSegment, obrSegment, db) {
+function handleORMOrderManual(segments, db) {
+    const pidSegment = segments.find(s => s.startsWith('PID|'));
+    const obrSegment = segments.find(s => s.startsWith('OBR|'));
+
     if (!pidSegment || !obrSegment) return;
 
     const pidFields = pidSegment.split('|');
     const obrFields = obrSegment.split('|');
 
-    const ssn = pidFields[3] || '';
-    const procedureCode = obrFields[4] || '';
-    const procedureDesc = procedureCode.split('^')[1] || procedureCode;
-    const reasonForExam = obrFields[13] || '';
+    const ssn = pidFields[HL7_CONFIG.PATIENT_SSN_INDEX] || '';
+    const procedureCode = obrFields[HL7_CONFIG.PROCEDURE_CODE_INDEX] || '';
+    const procedureDesc = procedureCode.split('^')[1] || procedureCode; // CODE^DESC
+    const reasonForExam = obrFields[HL7_CONFIG.REASON_FOR_EXAM_INDEX] || '';
 
     if (!ssn || ssn.length !== 14) return;
 
-    const visitId = uuid.v4();
-    db.run(`
-        INSERT INTO patient_visits (
-            visit_id, patient_ssn, visit_status, primary_diagnosis,
-            visit_type, department, created_by
-        ) VALUES (?, ?, 'open', ?, 'outpatient', 'radiology', 'hl7-system')
-    `, [visitId, ssn, reasonForExam || procedureDesc]);
+    // Check for duplicate open visit
+    db.get(`
+        SELECT visit_id FROM patient_visits 
+        WHERE patient_ssn = ? AND visit_status IN ('open', 'in_progress')
+        AND created_by = 'hl7-system'
+    `, [ssn], (err, row) => {
+        if (!err && row) {
+            console.log('[HL7] Open visit already exists for:', ssn);
+            return;
+        }
+
+        const visitId = uuid.v4();
+        db.run(`
+            INSERT INTO patient_visits (
+                visit_id, patient_ssn, visit_status, primary_diagnosis,
+                visit_type, department, created_by
+            ) VALUES (?, ?, 'open', ?, 'outpatient', 'radiology', 'hl7-system')
+        `, [visitId, ssn, reasonForExam || procedureDesc], (err) => {
+            if (err) console.error('[HL7] Error creating visit:', err.message);
+            else console.log('[HL7] Visit created:', visitId);
+        });
+    });
 }
 
 /**
@@ -337,6 +214,11 @@ function startHL7Server(port, db) {
             // Look for complete MLLP messages (start with <VT> and end with <FS><CR>)
             let vtIndex = buffer.indexOf('\x0b');
             let fsIndex = buffer.indexOf('\x1c\r', vtIndex);
+
+            console.log(`[HL7 DEBUG] Buffer len: ${buffer.length}, VT: ${vtIndex}, FS: ${fsIndex}`);
+            if (buffer.length > 0) {
+                console.log(`[HL7 DEBUG] Buffer end (hex): ${Buffer.from(buffer.slice(-10)).toString('hex')}`);
+            }
 
             while (vtIndex >= 0 && fsIndex > vtIndex) {
                 // Extract the HL7 message
