@@ -132,6 +132,37 @@
                             </div>
                             <% } %>
 
+                                <!-- Pagination -->
+                                <% if (typeof totalPages !=='undefined' && totalPages> 1) { %>
+                                    <nav aria-label="Page navigation" class="mt-4">
+                                        <ul class="pagination justify-content-center">
+                                            <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
+                                                <a class="page-link"
+                                                    href="?page=<%= currentPage - 1 %>&q=<%= searchQuery || '' %>"
+                                                    <%=currentPage===1 ? 'tabindex="-1" aria-disabled="true"' : ''
+                                                    %>>Previous</a>
+                                            </li>
+
+                                            <% for(let i=1; i <=totalPages; i++) { %>
+                                                <li class="page-item <%= currentPage === i ? 'active' : '' %>">
+                                                    <a class="page-link"
+                                                        href="?page=<%= i %>&q=<%= searchQuery || '' %>">
+                                                        <%= i %>
+                                                    </a>
+                                                </li>
+                                                <% } %>
+
+                                                    <li
+                                                        class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
+                                                        <a class="page-link"
+                                                            href="?page=<%= currentPage + 1 %>&q=<%= searchQuery || '' %>"
+                                                            <%=currentPage===totalPages
+                                                            ? 'tabindex="-1" aria-disabled="true"' : '' %>>Next</a>
+                                                    </li>
+                                        </ul>
+                                    </nav>
+                                    <% } %>
+
                 </div>
             </div>
         </div>

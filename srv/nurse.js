@@ -99,7 +99,16 @@ module.exports = function (app, db, requireAuth, requireRole) {
     app.get('/nurse/history', requireAuth, requireRole('nurse'), async (req, res) => {
         try {
             const query = req.query.q || '';
-            const history = await daos.visits.searchNurseHistory(req.session.userId, query);
+            const page = parseInt(req.query.page) || 1;
+            const limit = 10;
+            const offset = (page - 1) * limit;
+
+            const [history, totalCount] = await Promise.all([
+                daos.visits.searchNurseHistory(req.session.userId, query, limit, offset),
+                daos.visits.countNurseHistory(req.session.userId, query)
+            ]);
+
+            const totalPages = Math.ceil(totalCount / limit);
 
             // Process dates
             processVisitsWithAge(history);
@@ -108,6 +117,8 @@ module.exports = function (app, db, requireAuth, requireRole) {
                 user: req.session,
                 history: history || [],
                 searchQuery: query,
+                currentPage: page,
+                totalPages: totalPages,
                 moment: require('moment')
             });
         } catch (err) {

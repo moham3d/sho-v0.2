@@ -1,451 +1,469 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Assessment Details - Al-Shorouk Radiology Management System</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="/css/custom.css" rel="stylesheet">
+    <%- include('partials/head', { title: 'Assessment Details' }) %>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
 </head>
-<body>
-    <!-- Navigation -->
-    <%- include('navigation', { currentPage: 'admin' }) %>
 
-    <div class="container mt-4" id="main-content" role="main">
-        <!-- Header -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <!-- Breadcrumbs -->
-                <nav aria-label="breadcrumb" class="mb-3">
-                    <ol class="breadcrumb">
-                        <li class="breadcrumb-item">
-                            <a href="/"><i class="fas fa-home me-1" aria-hidden="true"></i>Home</a>
-                        </li>
-                        <li class="breadcrumb-item">
-                            <a href="/admin">Admin</a>
-                        </li>
-                        <li class="breadcrumb-item">
-                            <a href="/admin/assessments">Assessment Management</a>
-                        </li>
-                        <li class="breadcrumb-item active" aria-current="page">Assessment Details</li>
-                    </ol>
-                </nav>
+<body class="admin-compact">
+    <div class="d-flex vh-100 bg-light overflow-hidden">
+        <!-- Sidebar -->
+        <%- include('partials/admin-sidebar', { currentPage: 'assessments' }) %>
 
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h2>
-                            <i class="fas fa-<%= assessment.assessment_type === 'nursing' ? 'user-nurse' : 'x-ray' %> me-2" aria-hidden="true"></i>
-                            <%= assessment.assessment_type.charAt(0).toUpperCase() + assessment.assessment_type.slice(1) %> Assessment Details
-                        </h2>
-                        <p class="text-muted">Assessment ID: <%= assessment.assessment_type === 'nursing' ? assessment.assessment_id : assessment.radiology_id %></p>
-                    </div>
-                    <div class="d-flex gap-2">
-                        <a href="/admin/assessments" class="btn btn-outline-secondary btn-custom">
-                            <i class="fas fa-arrow-left me-2" aria-hidden="true"></i>Back to Assessments
-                        </a>
-                        <button type="button" class="btn btn-outline-danger btn-custom"
-                                data-assessment-id="<%= assessment.assessment_type === 'nursing' ? assessment.assessment_id : assessment.radiology_id %>"
-                                data-assessment-type="<%= assessment.assessment_type %>"
-                                data-patient-name="<%= assessment.patient_name %>"
-                                onclick="confirmDeleteAssessment(this)">
-                            <i class="fas fa-trash me-2" aria-hidden="true"></i>Delete Assessment
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+            <!-- Main Content -->
+            <div class="flex-grow-1 d-flex flex-column h-100 overflow-hidden">
+                <!-- Header -->
+                <%- include('partials/admin-header', { title: 'Assessment Details' }) %>
 
-        <!-- Notification -->
-        <% if (notification) { %>
-            <div class="alert alert-<%= notification.type === 'success' ? 'success' : 'danger' %> alert-dismissible fade show" role="alert">
-                <i class="fas fa-<%= notification.type === 'success' ? 'check-circle' : 'exclamation-triangle' %> me-2" aria-hidden="true"></i>
-                <%= notification.message %>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        <% } %>
+                    <!-- Scrollable Content -->
+                    <main class="flex-grow-1 overflow-auto p-4">
 
-        <!-- Assessment Type and Status -->
-        <div class="row mb-4">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-body text-center">
-                        <h5>Assessment Type</h5>
-                        <% if (assessment.assessment_type === 'nursing') { %>
-                            <span class="badge assessment-type-nursing fs-6">
-                                <i class="fas fa-user-nurse fa-2x me-2" aria-hidden="true"></i>Nursing Assessment
-                            </span>
-                        <% } else { %>
-                            <span class="badge assessment-type-radiology fs-6">
-                                <i class="fas fa-x-ray fa-2x me-2" aria-hidden="true"></i>Radiology Assessment
-                            </span>
-                        <% } %>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-body text-center">
-                        <h5>Status</h5>
-                        <% if (assessment.submission_status === 'submitted') { %>
-                            <span class="badge status-submitted fs-6">
-                                <i class="fas fa-check-circle fa-2x me-2" aria-hidden="true"></i>Submitted
-                            </span>
-                        <% } else { %>
-                            <span class="badge status-draft fs-6">
-                                <i class="fas fa-edit fa-2x me-2" aria-hidden="true"></i>Draft
-                            </span>
-                        <% } %>
-                    </div>
-                </div>
-            </div>
-        </div>
+                        <% if (notification) { %>
+                            <div class="alert alert-<%= notification.type === 'error' ? 'danger' : 'success' %> alert-dismissible fade show mb-4 border-0 shadow-sm"
+                                role="alert">
+                                <% if(notification.type==='success' ) { %><i class="bi bi-check-circle-fill me-2"></i>
+                                    <% } %>
+                                        <% if(notification.type==='error' ) { %><i
+                                                class="bi bi-exclamation-triangle-fill me-2"></i>
+                                            <% } %>
+                                                <%= notification.message %>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="alert"
+                                                        aria-label="Close"></button>
+                            </div>
+                            <% } %>
 
-        <!-- Patient Information -->
-        <div class="patient-info">
-            <h5><i class="fas fa-user me-2" aria-hidden="true"></i>Patient Information</h5>
-            <div class="row">
-                <div class="col-md-3">
-                    <span class="detail-label">Full Name:</span>
-                    <span class="detail-value"><%= assessment.patient_name %></span>
-                </div>
-                <div class="col-md-3">
-                    <span class="detail-label">Medical Number:</span>
-                    <span class="detail-value"><%= assessment.medical_number || 'Not provided' %></span>
-                </div>
-                <div class="col-md-3">
-                    <span class="detail-label">Mobile:</span>
-                    <span class="detail-value"><%= assessment.mobile_number || 'Not provided' %></span>
-                </div>
-                <div class="col-md-3">
-                    <span class="detail-label">Date of Birth:</span>
-                    <span class="detail-value">
-                        <%= assessment.date_of_birth ? new Date(assessment.date_of_birth).toLocaleDateString() : 'Not provided' %>
-                    </span>
-                </div>
-            </div>
-            <div class="row mt-2">
-                <div class="col-md-3">
-                    <span class="detail-label">Gender:</span>
-                    <span class="detail-value"><%= assessment.gender || 'Not specified' %></span>
-                </div>
-                <div class="col-md-9">
-                    <span class="detail-label">Address:</span>
-                    <span class="detail-value"><%= assessment.address || 'Not provided' %></span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Visit Information -->
-        <div class="visit-info">
-            <h5><i class="fas fa-calendar-check me-2" aria-hidden="true"></i>Visit Information</h5>
-            <div class="row">
-                <div class="col-md-3">
-                    <span class="detail-label">Visit ID:</span>
-                    <span class="detail-value"><%= assessment.visit_id %></span>
-                </div>
-                <div class="col-md-3">
-                    <span class="detail-label">Visit Date:</span>
-                    <span class="detail-value"><%= new Date(assessment.visit_date).toLocaleDateString() %></span>
-                </div>
-                <div class="col-md-3">
-                    <span class="detail-label">Visit Status:</span>
-                    <span class="detail-value"><%= assessment.visit_status %></span>
-                </div>
-                <div class="col-md-3">
-                    <span class="detail-label">Assessed By:</span>
-                    <span class="detail-value"><%= assessment.assessed_by_name || 'Unknown' %></span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Assessment Details -->
-        <% if (assessment.assessment_type === 'nursing') { %>
-            <!-- Nursing Assessment Details -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h4 class="section-title">
-                        <i class="fas fa-user-nurse me-2" aria-hidden="true"></i>Nursing Assessment Details
-                    </h4>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="detail-row">
-                                <span class="detail-label">Mode of Arrival:</span>
-                                <span class="detail-value"><%= assessment.mode_of_arrival || 'Not specified' %></span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Age:</span>
-                                <span class="detail-value"><%= assessment.age || 'Not specified' %></span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Chief Complaint:</span>
-                                <span class="detail-value"><%= assessment.chief_complaint || 'Not specified' %></span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Accompanied By:</span>
-                                <span class="detail-value"><%= assessment.accompanied_by || 'Not specified' %></span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Language Spoken:</span>
-                                <span class="detail-value"><%= assessment.language_spoken || 'Not specified' %></span>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="detail-row">
-                                <span class="detail-label">Temperature:</span>
-                                <span class="detail-value"><%= assessment.temperature_celsius ? assessment.temperature_celsius + ' °C' : 'Not measured' %></span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Pulse:</span>
-                                <span class="detail-value"><%= assessment.pulse_bpm ? assessment.pulse_bpm + ' bpm' : 'Not measured' %></span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Blood Pressure:</span>
-                                <span class="detail-value">
-                                    <%= assessment.blood_pressure_systolic && assessment.blood_pressure_diastolic ?
-                                        assessment.blood_pressure_systolic + '/' + assessment.blood_pressure_diastolic + ' mmHg' :
-                                        'Not measured' %>
-                                </span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Respiratory Rate:</span>
-                                <span class="detail-value"><%= assessment.respiratory_rate_per_min ? assessment.respiratory_rate_per_min + '/min' : 'Not measured' %></span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Oxygen Saturation:</span>
-                                <span class="detail-value"><%= assessment.oxygen_saturation_percent ? assessment.oxygen_saturation_percent + '%' : 'Not measured' %></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Additional sections for nursing assessment -->
-                    <hr>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6>Vital Signs & Measurements</h6>
-                            <div class="detail-row">
-                                <span class="detail-label">Blood Sugar:</span>
-                                <span class="detail-value"><%= assessment.blood_sugar_mg_dl ? assessment.blood_sugar_mg_dl + ' mg/dL' : 'Not measured' %></span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Weight:</span>
-                                <span class="detail-value"><%= assessment.weight_kg ? assessment.weight_kg + ' kg' : 'Not measured' %></span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Height:</span>
-                                <span class="detail-value"><%= assessment.height_cm ? assessment.height_cm + ' cm' : 'Not measured' %></span>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <h6>Patient Condition</h6>
-                            <div class="detail-row">
-                                <span class="detail-label">Psychological Problem:</span>
-                                <span class="detail-value"><%= assessment.psychological_problem || 'Not specified' %></span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Smoker:</span>
-                                <span class="detail-value"><%= assessment.is_smoker ? 'Yes' : 'No' %></span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Allergies:</span>
-                                <span class="detail-value"><%= assessment.has_allergies ? 'Yes' : 'No' %></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        <% } else { %>
-            <!-- Radiology Assessment Details -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h4 class="section-title">
-                        <i class="fas fa-x-ray me-2" aria-hidden="true"></i>Radiology Assessment Details
-                    </h4>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="detail-row">
-                                <span class="detail-label">Treating Physician:</span>
-                                <span class="detail-value"><%= assessment.treating_physician || 'Not specified' %></span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Department:</span>
-                                <span class="detail-value"><%= assessment.department || 'Not specified' %></span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Fasting Hours:</span>
-                                <span class="detail-value"><%= assessment.fasting_hours || 'Not specified' %></span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Diabetic:</span>
-                                <span class="detail-value"><%= assessment.is_diabetic ? 'Yes' : 'No' %></span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Blood Sugar Level:</span>
-                                <span class="detail-value"><%= assessment.blood_sugar_level || 'Not measured' %></span>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="detail-row">
-                                <span class="detail-label">Weight:</span>
-                                <span class="detail-value"><%= assessment.weight_kg ? assessment.weight_kg + ' kg' : 'Not measured' %></span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Height:</span>
-                                <span class="detail-value"><%= assessment.height_cm ? assessment.height_cm + ' cm' : 'Not measured' %></span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Dose Amount:</span>
-                                <span class="detail-value"><%= assessment.dose_amount || 'Not specified' %></span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">CTDIvol:</span>
-                                <span class="detail-value"><%= assessment.ctd1vol || 'Not specified' %></span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">DLP:</span>
-                                <span class="detail-value"><%= assessment.dlp || 'Not specified' %></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <hr>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6>Medical History</h6>
-                            <div class="detail-row">
-                                <span class="detail-label">First Time:</span>
-                                <span class="detail-value"><%= assessment.is_first_time ? 'Yes' : 'No' %></span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Uses Contrast:</span>
-                                <span class="detail-value"><%= assessment.uses_contrast ? 'Yes' : 'No' %></span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Kidney Function:</span>
-                                <span class="detail-value"><%= assessment.kidney_function_value || 'Not specified' %></span>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <h6>Assessment Results</h6>
-                            <div class="detail-row">
-                                <span class="detail-label">Diagnosis:</span>
-                                <span class="detail-value"><%= assessment.diagnosis || 'Not specified' %></span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Reason for Study:</span>
-                                <span class="detail-value"><%= assessment.reason_for_study || 'Not specified' %></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <% if (assessment.findings || assessment.impression || assessment.recommendations) { %>
-                        <hr>
-                        <div class="row">
-                            <div class="col-12">
-                                <h6>Radiology Report</h6>
-                                <% if (assessment.findings) { %>
-                                    <div class="detail-row">
-                                        <span class="detail-label">Findings:</span>
-                                        <span class="detail-value"><%= assessment.findings %></span>
+                                <!-- Page Header & Actions -->
+                                <div class="d-flex justify-content-between align-items-center mb-4">
+                                    <div>
+                                        <nav aria-label="breadcrumb">
+                                            <ol class="breadcrumb mb-1">
+                                                <li class="breadcrumb-item"><a href="/admin/visits"
+                                                        class="text-decoration-none text-muted">Visits</a></li>
+                                                <li class="breadcrumb-item active" aria-current="page">Assessment</li>
+                                            </ol>
+                                        </nav>
+                                        <h4 class="fw-bold mb-0">
+                                            <% if (assessment.assessment_type==='nursing' ) { %>
+                                                <i class="bi bi-activity me-2 text-primary"></i>Nursing Assessment
+                                                <% } else { %>
+                                                    <i class="bi bi-radioactive me-2 text-success"></i>Radiology
+                                                    Assessment
+                                                    <% } %>
+                                        </h4>
                                     </div>
-                                <% } %>
-                                <% if (assessment.impression) { %>
-                                    <div class="detail-row">
-                                        <span class="detail-label">Impression:</span>
-                                        <span class="detail-value"><%= assessment.impression %></span>
+                                    <div class="d-flex gap-2">
+                                        <a href="/admin/visits/<%= assessment.visit_id %>" class="btn btn-light border">
+                                            <i class="bi bi-arrow-left me-2"></i>Back to Visit
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger"
+                                            data-assessment-id="<%= assessment.assessment_type === 'nursing' ? assessment.assessment_id : assessment.radiology_id %>"
+                                            data-assessment-type="<%= assessment.assessment_type %>"
+                                            data-patient-name="<%= assessment.patient_name %>"
+                                            onclick="confirmDeleteAssessment(this)">
+                                            <i class="bi bi-trash me-2"></i>Delete
+                                        </button>
                                     </div>
-                                <% } %>
-                                <% if (assessment.recommendations) { %>
-                                    <div class="detail-row">
-                                        <span class="detail-label">Recommendations:</span>
-                                        <span class="detail-value"><%= assessment.recommendations %></span>
-                                    </div>
-                                <% } %>
-                            </div>
-                        </div>
-                    <% } %>
-                </div>
-            </div>
-        <% } %>
+                                </div>
 
-        <!-- Signature Section -->
-        <% if ((assessment.assessment_type === 'nursing' && assessment.nurse_signature) || (assessment.assessment_type === 'radiology' && assessment.physician_signature)) { %>
-            <div class="card">
-                <div class="card-body">
-                    <div class="signature-section">
-                        <h5>
-                            <i class="fas fa-signature me-2" aria-hidden="true"></i>
-                            <%= assessment.assessment_type === 'nursing' ? 'Nurse' : 'Physician' %> Signature
+                                <div class="row g-4">
+                                    <!-- Left Column: Patient & Meta Info -->
+                                    <div class="col-lg-4">
+                                        <div class="card border-0 shadow-sm rounded-3 mb-4">
+                                            <div class="card-header bg-white border-bottom-0 py-3">
+                                                <h5 class="mb-0 fw-bold"><i
+                                                        class="bi bi-person me-2 text-primary"></i>Patient Info</h5>
+                                            </div>
+                                            <div class="card-body pt-0">
+                                                <div class="d-flex align-items-center mb-3">
+                                                    <div class="avatar-circle bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center me-3"
+                                                        style="width: 48px; height: 48px; font-size: 1.25rem; font-weight: bold;">
+                                                        <%= (assessment.patient_name || 'U' ).charAt(0).toUpperCase() %>
+                                                    </div>
+                                                    <div>
+                                                        <h6 class="mb-0 fw-bold">
+                                                            <%= assessment.patient_name %>
+                                                        </h6>
+                                                        <small class="text-muted">
+                                                            <%= assessment.medical_number || 'No Med ID' %>
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                                <hr class="text-muted opacity-25">
+                                                <dl class="row g-0 mb-0">
+                                                    <dt class="col-sm-4 text-muted small fw-normal">DOB</dt>
+                                                    <dd class="col-sm-8 small fw-medium">
+                                                        <%= assessment.date_of_birth ? new
+                                                            Date(assessment.date_of_birth).toLocaleDateString() : '-' %>
+                                                    </dd>
+
+                                                    <dt class="col-sm-4 text-muted small fw-normal">Gender</dt>
+                                                    <dd class="col-sm-8 small fw-medium">
+                                                        <%= assessment.gender || '-' %>
+                                                    </dd>
+
+                                                    <dt class="col-sm-4 text-muted small fw-normal">Phone</dt>
+                                                    <dd class="col-sm-8 small fw-medium">
+                                                        <%= assessment.mobile_number || '-' %>
+                                                    </dd>
+                                                </dl>
+                                            </div>
+                                        </div>
+
+                                        <div class="card border-0 shadow-sm rounded-3">
+                                            <div class="card-header bg-white border-bottom-0 py-3">
+                                                <h5 class="mb-0 fw-bold"><i
+                                                        class="bi bi-info-circle me-2 text-primary"></i>Metadata</h5>
+                                            </div>
+                                            <div class="card-body pt-0">
+                                                <dl class="row g-0 mb-0">
+                                                    <dt class="col-sm-5 text-muted small fw-normal">Visit ID</dt>
+                                                    <dd class="col-sm-7 small fw-medium text-truncate"
+                                                        title="<%= assessment.visit_id %>">
+                                                        <%= assessment.visit_id %>
+                                                    </dd>
+
+                                                    <dt class="col-sm-5 text-muted small fw-normal">Date</dt>
+                                                    <dd class="col-sm-7 small fw-medium">
+                                                        <%= new Date(assessment.assessed_at ||
+                                                            assessment.created_at).toLocaleDateString() %>
+                                                    </dd>
+
+                                                    <dt class="col-sm-5 text-muted small fw-normal">Assessor</dt>
+                                                    <dd class="col-sm-7 small fw-medium">
+                                                        <%= assessment.assessed_by_name || 'Unknown' %>
+                                                    </dd>
+
+                                                    <dt class="col-sm-5 text-muted small fw-normal">Status</dt>
+                                                    <dd class="col-sm-7 small">
+                                                        <% if (assessment.submission_status==='submitted' ) { %>
+                                                            <span
+                                                                class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Submitted</span>
+                                                            <% } else { %>
+                                                                <span
+                                                                    class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill">Draft</span>
+                                                                <% } %>
+                                                    </dd>
+                                                </dl>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Right Column: Assessment Details -->
+                                    <div class="col-lg-8">
+                                        <div class="card border-0 shadow-sm rounded-3">
+                                            <div class="card-header bg-white border-bottom-0 py-3">
+                                                <h5 class="mb-0 fw-bold">Detailed Report</h5>
+                                            </div>
+                                            <div class="card-body pt-0">
+                                                <% if (assessment.assessment_type==='nursing' ) { %>
+
+                                                    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-6 g-2 mb-4">
+                                                        <div class="col">
+                                                            <div class="p-2 border rounded text-center bg-light h-100">
+                                                                <small class="d-block text-muted text-uppercase"
+                                                                    style="font-size: 0.65rem;">Temp</small>
+                                                                <div class="fw-bold text-dark">
+                                                                    <%= assessment.temperature_celsius || '-' %> <span
+                                                                            class="small text-muted fw-normal">°C</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col">
+                                                            <div class="p-2 border rounded text-center bg-light h-100">
+                                                                <small class="d-block text-muted text-uppercase"
+                                                                    style="font-size: 0.65rem;">Pulse</small>
+                                                                <div class="fw-bold text-dark">
+                                                                    <%= assessment.pulse_bpm || '-' %> <span
+                                                                            class="small text-muted fw-normal">bpm</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col">
+                                                            <div class="p-2 border rounded text-center bg-light h-100">
+                                                                <small class="d-block text-muted text-uppercase"
+                                                                    style="font-size: 0.65rem;">BP</small>
+                                                                <div class="fw-bold text-dark">
+                                                                    <%= assessment.blood_pressure_systolic || '-' %>/<%=
+                                                                            assessment.blood_pressure_diastolic || '-'
+                                                                            %>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col">
+                                                            <div class="p-2 border rounded text-center bg-light h-100">
+                                                                <small class="d-block text-muted text-uppercase"
+                                                                    style="font-size: 0.65rem;">Resp</small>
+                                                                <div class="fw-bold text-dark">
+                                                                    <%= assessment.respiratory_rate_per_min || '-' %>
+                                                                        <span
+                                                                            class="small text-muted fw-normal">/min</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col">
+                                                            <div class="p-2 border rounded text-center bg-light h-100">
+                                                                <small class="d-block text-muted text-uppercase"
+                                                                    style="font-size: 0.65rem;">SpO2</small>
+                                                                <div class="fw-bold text-dark">
+                                                                    <%= assessment.oxygen_saturation_percent || '-' %>
+                                                                        <span
+                                                                            class="small text-muted fw-normal">%</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col">
+                                                            <div class="p-2 border rounded text-center bg-light h-100">
+                                                                <small class="d-block text-muted text-uppercase"
+                                                                    style="font-size: 0.65rem;">Sugar</small>
+                                                                <div class="fw-bold text-dark">
+                                                                    <%= assessment.blood_sugar_mg_dl || '-' %> <span
+                                                                            class="small text-muted fw-normal">mg/dL</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <h6
+                                                        class="text-uppercase text-secondary small fw-bold mb-3 border-bottom pb-2">
+                                                        Physical Condition</h6>
+                                                    <div class="row g-3 mb-4">
+                                                        <div class="col-md-6">
+                                                            <dl class="row mb-0">
+                                                                <dt class="col-6 text-muted small fw-normal">Mode of
+                                                                    Arrival</dt>
+                                                                <dd class="col-6 small fw-medium">
+                                                                    <%= assessment.mode_of_arrival || 'N/A' %>
+                                                                </dd>
+                                                                <dt class="col-6 text-muted small fw-normal">
+                                                                    Consciousness</dt>
+                                                                <dd class="col-6 small fw-medium">
+                                                                    <%= assessment.consciousness_level || 'N/A' %>
+                                                                </dd>
+                                                                <dt class="col-6 text-muted small fw-normal">Mobility
+                                                                </dt>
+                                                                <dd class="col-6 small fw-medium">
+                                                                    <%= assessment.mobility_status || 'N/A' %>
+                                                                </dd>
+                                                            </dl>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <dl class="row mb-0">
+                                                                <dt class="col-6 text-muted small fw-normal">Smoker</dt>
+                                                                <dd class="col-6 small fw-medium">
+                                                                    <%= assessment.is_smoker ? 'Yes' : 'No' %>
+                                                                </dd>
+                                                                <dt class="col-6 text-muted small fw-normal">Allergies
+                                                                </dt>
+                                                                <dd class="col-6 small fw-medium">
+                                                                    <%= assessment.has_allergies ? 'Yes' : 'No' %>
+                                                                </dd>
+                                                                <dt class="col-6 text-muted small fw-normal">Diet Type
+                                                                </dt>
+                                                                <dd class="col-6 small fw-medium">
+                                                                    <%= assessment.diet_type || 'N/A' %>
+                                                                </dd>
+                                                            </dl>
+                                                        </div>
+                                                    </div>
+
+                                                    <% if (assessment.chief_complaint) { %>
+                                                        <div class="mb-3">
+                                                            <h6
+                                                                class="text-uppercase text-secondary small fw-bold mb-2">
+                                                                Chief Complaint</h6>
+                                                            <div class="p-3 bg-light rounded small text-dark">
+                                                                <%= assessment.chief_complaint %>
+                                                            </div>
+                                                        </div>
+                                                        <% } %>
+
+                                                            <% } else { %>
+
+                                                                <div class="row g-3 mb-4">
+                                                                    <div class="col-md-6">
+                                                                        <dl class="row mb-0">
+                                                                            <dt
+                                                                                class="col-6 text-muted small fw-normal">
+                                                                                Department</dt>
+                                                                            <dd class="col-6 small fw-medium">
+                                                                                <%= assessment.department || 'N/A' %>
+                                                                            </dd>
+                                                                            <dt
+                                                                                class="col-6 text-muted small fw-normal">
+                                                                                Modality</dt>
+                                                                            <dd class="col-6 small fw-medium">
+                                                                                <%= assessment.modality || 'N/A' %>
+                                                                            </dd>
+                                                                            <dt
+                                                                                class="col-6 text-muted small fw-normal">
+                                                                                Contrast</dt>
+                                                                            <dd class="col-6 small fw-medium">
+                                                                                <%= assessment.uses_contrast ? 'Yes'
+                                                                                    : 'No' %>
+                                                                            </dd>
+                                                                        </dl>
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <dl class="row mb-0">
+                                                                            <dt
+                                                                                class="col-6 text-muted small fw-normal">
+                                                                                Dose Amount</dt>
+                                                                            <dd class="col-6 small fw-medium">
+                                                                                <%= assessment.dose_amount || 'N/A' %>
+                                                                            </dd>
+                                                                            <dt
+                                                                                class="col-6 text-muted small fw-normal">
+                                                                                CTDIvol</dt>
+                                                                            <dd class="col-6 small fw-medium">
+                                                                                <%= assessment.ctd1vol || 'N/A' %>
+                                                                            </dd>
+                                                                            <dt
+                                                                                class="col-6 text-muted small fw-normal">
+                                                                                DLP</dt>
+                                                                            <dd class="col-6 small fw-medium">
+                                                                                <%= assessment.dlp || 'N/A' %>
+                                                                            </dd>
+                                                                        </dl>
+                                                                    </div>
+                                                                </div>
+
+                                                                <% if (assessment.reason_for_study) { %>
+                                                                    <div class="mb-4">
+                                                                        <h6
+                                                                            class="text-uppercase text-secondary small fw-bold mb-2">
+                                                                            Reason for Study</h6>
+                                                                        <div
+                                                                            class="p-3 bg-light rounded small text-dark">
+                                                                            <%= assessment.reason_for_study %>
+                                                                        </div>
+                                                                    </div>
+                                                                    <% } %>
+
+                                                                        <% if (assessment.findings) { %>
+                                                                            <div class="mb-4">
+                                                                                <h6
+                                                                                    class="text-uppercase text-secondary small fw-bold mb-2">
+                                                                                    Findings</h6>
+                                                                                <div class="p-3 border rounded bg-white small text-dark"
+                                                                                    style="white-space: pre-wrap;">
+                                                                                    <%= assessment.findings %>
+                                                                                </div>
+                                                                            </div>
+                                                                            <% } %>
+
+                                                                                <% if (assessment.impression) { %>
+                                                                                    <div class="mb-4">
+                                                                                        <h6
+                                                                                            class="text-uppercase text-secondary small fw-bold mb-2">
+                                                                                            Impression</h6>
+                                                                                        <div class="p-3 border rounded bg-white small text-dark"
+                                                                                            style="white-space: pre-wrap;">
+                                                                                            <%= assessment.impression %>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <% } %>
+
+                                                                                        <% if
+                                                                                            (assessment.recommendations)
+                                                                                            { %>
+                                                                                            <div class="mb-4">
+                                                                                                <h6
+                                                                                                    class="text-uppercase text-secondary small fw-bold mb-2">
+                                                                                                    Recommendations</h6>
+                                                                                                <div class="p-3 border rounded bg-warning-subtle text-dark border-warning small"
+                                                                                                    style="white-space: pre-wrap;">
+                                                                                                    <%= assessment.recommendations
+                                                                                                        %>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <% } %>
+
+                                                                                                <% } %>
+
+                                                                                                    <!-- Signature -->
+                                                                                                    <% if
+                                                                                                        (assessment.nurse_signature
+                                                                                                        ||
+                                                                                                        assessment.physician_signature)
+                                                                                                        { %>
+                                                                                                        <div
+                                                                                                            class="mt-4 pt-4 border-top">
+                                                                                                            <h6
+                                                                                                                class="text-uppercase text-secondary small fw-bold mb-3">
+                                                                                                                Signature
+                                                                                                            </h6>
+                                                                                                            <div
+                                                                                                                class="p-3 border rounded bg-white d-inline-block">
+                                                                                                                <img src="<%= assessment.nurse_signature || assessment.physician_signature %>"
+                                                                                                                    alt="Signature"
+                                                                                                                    style="height: 60px;">
+                                                                                                            </div>
+                                                                                                            <div
+                                                                                                                class="small text-muted mt-2">
+                                                                                                                Signed
+                                                                                                                by <%=
+                                                                                                                    assessment.assessed_by_name
+                                                                                                                    || 'Unknown'
+                                                                                                                    %>
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                        <% } %>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                    </main>
+            </div>
+    </div>
+
+    <%- include('partials/scripts') %>
+
+        <!-- Delete Assessment Confirmation Modal -->
+        <div class="modal fade" id="deleteAssessmentModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-danger text-white border-0">
+                        <h5 class="modal-title fw-bold">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>Delete Assessment
                         </h5>
-                        <img src="<%= assessment.assessment_type === 'nursing' ? assessment.nurse_signature : assessment.physician_signature %>"
-                             alt="<%= assessment.assessment_type === 'nursing' ? 'Nurse' : 'Physician' %> Signature"
-                             class="signature-image">
-                        <p class="text-muted mt-2">
-                            Signed by <%= assessment.assessed_by_name || 'Unknown' %> on <%= new Date(assessment.assessed_at).toLocaleString() %>
-                        </p>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
                     </div>
-                </div>
-            </div>
-        <% } %>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Delete Assessment Confirmation Modal -->
-    <div class="modal fade" id="deleteAssessmentModal" tabindex="-1" aria-labelledby="deleteAssessmentModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-danger text-white">
-                    <h3 class="modal-title" id="deleteAssessmentModalLabel">
-                        <i class="fas fa-exclamation-triangle me-2" aria-hidden="true"></i>Confirm Assessment Deletion
-                    </h3>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="alert alert-danger">
-                        <i class="fas fa-warning me-2" aria-hidden="true"></i>
-                        <strong>Warning:</strong> This action cannot be undone!
+                    <div class="modal-body p-4">
+                        <p class="mb-3">Are you sure you want to delete this <strong id="assessmentTypeText"></strong>
+                            assessment for <strong id="assessmentPatientName"></strong>?</p>
+                        <div class="alert alert-danger bg-danger-subtle border-danger-subtle text-danger mb-0">
+                            <i class="bi bi-exclamation-circle me-2"></i>This action cannot be undone.
+                        </div>
                     </div>
-                    <p>Are you sure you want to delete this <strong id="assessmentTypeText"></strong> assessment for <strong id="assessmentPatientName"></strong>?</p>
-                    <ul class="text-muted">
-                        <li>The assessment record will be permanently removed</li>
-                        <li>All associated form data will be deleted</li>
-                        <li>This action affects medical records and cannot be reversed</li>
-                    </ul>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-2" aria-hidden="true"></i>Cancel
-                    </button>
-                    <form id="deleteAssessmentForm" method="POST" class="d-inline">
-                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                        <button type="submit" class="btn btn-danger">
-                            <i class="fas fa-trash me-2" aria-hidden="true"></i>Yes, Delete Assessment
-                        </button>
-                    </form>
+                    <div class="modal-footer border-0 pt-0">
+                        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+                        <form id="deleteAssessmentForm" method="POST">
+                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                            <button type="submit" class="btn btn-danger">Delete Permanently</button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <script>
-        // Handle delete assessment modal
-        function confirmDeleteAssessment(button) {
-            const assessmentId = button.getAttribute('data-assessment-id');
-            const assessmentType = button.getAttribute('data-assessment-type');
-            const patientName = button.getAttribute('data-patient-name');
+        <script>
+            function confirmDeleteAssessment(button) {
+                const assessmentId = button.getAttribute('data-assessment-id');
+                const assessmentType = button.getAttribute('data-assessment-type');
+                const patientName = button.getAttribute('data-patient-name');
 
-            document.getElementById('assessmentTypeText').textContent = assessmentType.charAt(0).toUpperCase() + assessmentType.slice(1);
-            document.getElementById('assessmentPatientName').textContent = patientName;
-            document.getElementById('deleteAssessmentForm').action = `/admin/assessments/${assessmentId}/delete?type=${assessmentType}`;
+                document.getElementById('assessmentTypeText').textContent = assessmentType.charAt(0).toUpperCase() + assessmentType.slice(1);
+                document.getElementById('assessmentPatientName').textContent = patientName;
+                document.getElementById('deleteAssessmentForm').action = `/admin/assessments/${assessmentId}/delete?type=${assessmentType}`;
 
-            const modal = new bootstrap.Modal(document.getElementById('deleteAssessmentModal'));
-            modal.show();
-        }
-    </script>
+                const modal = new bootstrap.Modal(document.getElementById('deleteAssessmentModal'));
+                modal.show();
+            }
+        </script>
 </body>
+
 </html>

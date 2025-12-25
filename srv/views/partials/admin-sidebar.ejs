@@ -1,0 +1,71 @@
+<!-- Admin Sidebar -->
+<div id="adminSidebar" class="d-flex flex-column flex-shrink-0 p-3 bg-medical-gradient h-100 shadow-lg admin-sidebar">
+    <a href="/admin"
+        class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none sidebar-header">
+        <i class="bi bi-shield-check fs-2 me-2"></i>
+        <span class="fs-4 fw-bold sidebar-text">Admin Panel</span>
+    </a>
+    <hr class="text-white opacity-25">
+    <ul class="nav nav-pills flex-column mb-auto">
+        <li class="nav-item">
+            <a href="/admin" class="nav-link <%= currentPage === 'dashboard' ? 'active' : 'text-white' %>"
+                title="Dashboard">
+                <i class="bi bi-speedometer2 me-2"></i>
+                <span class="sidebar-text">Dashboard</span>
+            </a>
+        </li>
+        <li>
+            <a href="/admin/users" class="nav-link <%= currentPage === 'users' ? 'active' : 'text-white' %>"
+                title="Users">
+                <i class="bi bi-people me-2"></i>
+                <span class="sidebar-text">Users</span>
+            </a>
+        </li>
+        <li>
+            <a href="/admin/patients" class="nav-link <%= currentPage === 'patients' ? 'active' : 'text-white' %>"
+                title="Patients">
+                <i class="bi bi-person-badge me-2"></i>
+                <span class="sidebar-text">Patients</span>
+            </a>
+        </li>
+        <li>
+            <a href="/admin/visits" class="nav-link <%= currentPage === 'visits' ? 'active' : 'text-white' %>"
+                title="Visits">
+                <i class="bi bi-calendar-check me-2"></i>
+                <span class="sidebar-text">Visits</span>
+            </a>
+        </li>
+        <li>
+            <a href="/admin/assessments" class="nav-link <%= currentPage === 'assessments' ? 'active' : 'text-white' %>"
+                title="Assessments">
+                <i class="bi bi-file-medical me-2"></i>
+                <span class="sidebar-text">Assessments</span>
+            </a>
+        </li>
+    </ul>
+    <hr class="text-white opacity-25">
+    <div class="mt-auto">
+        <ul class="nav nav-pills flex-column">
+            <li class="nav-item mb-2">
+                <div class="d-flex align-items-center px-3 py-2 text-white">
+                    <div class="avatar-circle bg-white text-primary small me-2 flex-shrink-0"
+                        style="width: 32px; height: 32px; font-size: 14px; display: flex; align-items: center; justify-content: center;">
+                        <%= user.username.charAt(0).toUpperCase() %>
+                    </div>
+                    <span class="sidebar-text fw-bold text-truncate">
+                        <%= user.username %>
+                    </span>
+                </div>
+            </li>
+            <li class="nav-item">
+                <form action="/logout" method="POST" class="m-0 p-0">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button type="submit" class="nav-link text-white w-100 text-start d-flex align-items-center">
+                        <i class="bi bi-box-arrow-right me-2"></i>
+                        <span class="sidebar-text">Sign out</span>
+                    </button>
+                </form>
+            </li>
+        </ul>
+    </div>
+</div>

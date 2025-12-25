@@ -168,67 +168,120 @@ class VisitDAO {
      * Search nurse history (Completed assessments with filter)
      * @param {string} userId - Nurse user ID
      * @param {string} searchQuery - Search term (Name or SSN)
+     * @param {number} limit - Limit for pagination
+     * @param {number} offset - Offset for pagination
      * @returns {Promise<Array>}
      */
-    async searchNurseHistory(userId, searchQuery = '') {
-        const query = searchQuery ? `% ${searchQuery.toLowerCase()}% ` : '%';
+    async searchNurseHistory(userId, searchQuery = '', limit = 10, offset = 0) {
+        const query = searchQuery ? `%${searchQuery.toLowerCase()}%` : '%';
 
         return this._all(`
-SELECT
-pv.visit_id, pv.patient_ssn, pv.visit_date, pv.visit_status,
-    pv.primary_diagnosis, pv.secondary_diagnosis, pv.diagnosis_code,
-    pv.department,
-    p.full_name as patient_name, p.medical_number, p.date_of_birth, p.gender,
-    na.assessment_id, fs.submission_status, fs.submitted_at
+            SELECT
+                pv.visit_id, pv.patient_ssn, pv.visit_date, pv.visit_status,
+                pv.primary_diagnosis, pv.secondary_diagnosis, pv.diagnosis_code,
+                pv.department,
+                p.full_name as patient_name, p.medical_number, p.date_of_birth, p.gender,
+                na.assessment_id, fs.submission_status, fs.submitted_at
             FROM patient_visits pv
             JOIN patients p ON pv.patient_ssn = p.ssn
             JOIN form_submissions fs ON fs.visit_id = pv.visit_id AND fs.form_id = 'form-05-uuid'
             JOIN nursing_assessments na ON na.submission_id = fs.submission_id
             WHERE fs.submitted_by = ?
-    AND fs.submission_status = 'submitted'
-AND(
-    lower(p.full_name) LIKE ? OR 
+            AND fs.submission_status = 'submitted'
+            AND (
+                lower(p.full_name) LIKE ? OR 
                 p.ssn LIKE ? OR 
                 p.medical_number LIKE ?
             )
             ORDER BY fs.submitted_at DESC
-            LIMIT 50
-    `, [userId, query, query, query]);
+            LIMIT ? OFFSET ?
+        `, [userId, query, query, query, limit, offset]);
+    }
+
+    /**
+     * Count nurse history records for pagination
+     * @param {string} userId - Nurse user ID
+     * @param {string} searchQuery - Search term
+     * @returns {Promise<number>}
+     */
+    async countNurseHistory(userId, searchQuery = '') {
+        const query = searchQuery ? `%${searchQuery.toLowerCase()}%` : '%';
+        const result = await this._get(`
+            SELECT COUNT(*) as count
+            FROM patient_visits pv
+            JOIN patients p ON pv.patient_ssn = p.ssn
+            JOIN form_submissions fs ON fs.visit_id = pv.visit_id AND fs.form_id = 'form-05-uuid'
+            JOIN nursing_assessments na ON na.submission_id = fs.submission_id
+            WHERE fs.submitted_by = ?
+            AND fs.submission_status = 'submitted'
+            AND (
+                lower(p.full_name) LIKE ? OR 
+                p.ssn LIKE ? OR 
+                p.medical_number LIKE ?
+            )
+        `, [userId, query, query, query]);
+        return result ? result.count : 0;
     }
 
     /**
      * Search radiologist history
      * @param {string} userId - Radiologist user ID
      * @param {string} searchQuery - Search term (Name or SSN)
+     * @param {number} limit - Limit for pagination
+     * @param {number} offset - Offset for pagination
      * @returns {Promise<Array>}
      */
-    async searchRadiologistHistory(userId, searchQuery = '') {
-        const query = searchQuery ? `% ${searchQuery.toLowerCase()}% ` : '%';
+    async searchRadiologistHistory(userId, searchQuery = '', limit = 10, offset = 0) {
+        const query = searchQuery ? `%${searchQuery.toLowerCase()}%` : '%';
 
         return this._all(`
-SELECT
-pv.visit_id, pv.patient_ssn, pv.visit_date, pv.visit_status,
-    pv.primary_diagnosis, pv.department,
-    p.full_name as patient_name, p.medical_number, p.date_of_birth, p.gender,
-    CASE 
+            SELECT
+                pv.visit_id, pv.patient_ssn, pv.visit_date, pv.visit_status,
+                pv.primary_diagnosis, pv.department,
+                p.full_name as patient_name, p.medical_number, p.date_of_birth, p.gender,
+                CASE 
                     WHEN pet.record_id IS NOT NULL THEN 'PET CT'
                     WHEN ref.id IS NOT NULL THEN 'Radiology'
                     ELSE 'Unknown'
-END as form_type,
-    COALESCE(ref.updated_at, ref.created_at, pet.updated_at, pet.created_at) as completed_at
+                END as form_type,
+                COALESCE(ref.updated_at, ref.created_at, pet.updated_at, pet.created_at) as completed_at
             FROM patient_visits pv
             JOIN patients p ON pv.patient_ssn = p.ssn
             LEFT JOIN radiology_examination_form ref ON ref.visit_id = pv.visit_id AND ref.created_by = ?
-    LEFT JOIN pet_ct_records pet ON pet.visit_id = pv.visit_id AND pet.created_by = ?
-        WHERE(ref.id IS NOT NULL OR pet.record_id IS NOT NULL)
-            AND(
-            lower(p.full_name) LIKE ? OR 
+            LEFT JOIN pet_ct_records pet ON pet.visit_id = pv.visit_id AND pet.created_by = ?
+            WHERE (ref.id IS NOT NULL OR pet.record_id IS NOT NULL)
+            AND (
+                lower(p.full_name) LIKE ? OR 
                 p.ssn LIKE ? OR 
                 p.medical_number LIKE ?
             )
             ORDER BY completed_at DESC
-            LIMIT 50
-    `, [userId, userId, query, query, query]);
+            LIMIT ? OFFSET ?
+        `, [userId, userId, query, query, query, limit, offset]);
+    }
+
+    /**
+     * Count radiologist history records for pagination
+     * @param {string} userId - Radiologist user ID
+     * @param {string} searchQuery - Search term
+     * @returns {Promise<number>}
+     */
+    async countRadiologistHistory(userId, searchQuery = '') {
+        const query = searchQuery ? `%${searchQuery.toLowerCase()}%` : '%';
+        const result = await this._get(`
+            SELECT COUNT(*) as count
+            FROM patient_visits pv
+            JOIN patients p ON pv.patient_ssn = p.ssn
+            LEFT JOIN radiology_examination_form ref ON ref.visit_id = pv.visit_id AND ref.created_by = ?
+            LEFT JOIN pet_ct_records pet ON pet.visit_id = pv.visit_id AND pet.created_by = ?
+            WHERE (ref.id IS NOT NULL OR pet.record_id IS NOT NULL)
+            AND (
+                lower(p.full_name) LIKE ? OR 
+                p.ssn LIKE ? OR 
+                p.medical_number LIKE ?
+            )
+        `, [userId, userId, query, query, query]);
+        return result ? result.count : 0;
     }
 
     /**
@@ -289,6 +342,36 @@ SELECT
      */
     static generateVisitId() {
         return 'visit-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    }
+
+    /**
+     * Search completed reports for admin
+     * @param {string} searchQuery - SSN, Medical Number, or Visit ID
+     * @returns {Promise<Array>}
+     */
+    async searchCompletedReports(searchQuery = '') {
+        const query = searchQuery ? `%${searchQuery.toLowerCase()}%` : '%';
+
+        return this._all(`
+            SELECT
+                pv.visit_id, pv.visit_date, pv.visit_status, pv.department,
+                p.full_name as patient_name, p.medical_number, p.ssn,
+                (SELECT COUNT(*) FROM form_submissions fs WHERE fs.visit_id = pv.visit_id AND fs.submission_status = 'submitted') as report_count
+            FROM patient_visits pv
+            JOIN patients p ON pv.patient_ssn = p.ssn
+            WHERE (
+                lower(p.full_name) LIKE ? OR 
+                p.ssn LIKE ? OR 
+                p.medical_number LIKE ? OR
+                pv.visit_id LIKE ?
+            )
+            AND (pv.visit_status = 'completed' OR EXISTS (
+                SELECT 1 FROM form_submissions fs 
+                WHERE fs.visit_id = pv.visit_id AND fs.submission_status = 'submitted'
+            ))
+            ORDER BY pv.visit_date DESC, pv.created_at DESC
+            LIMIT 20
+        `, [query, query, query, query]);
     }
 }
 

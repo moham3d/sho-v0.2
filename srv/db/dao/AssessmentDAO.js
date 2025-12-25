@@ -194,7 +194,7 @@ class AssessmentDAO {
             SELECT 
                 'Available' as type,
                 'New Visit' as action,
-                p.full_name || ' - ' || v.department as details,
+                p.full_name || ' (' || COALESCE(v.department, 'General') || ')' as details,
                 v.created_at as timestamp,
                 u.username as user
             FROM patient_visits v
@@ -204,10 +204,15 @@ class AssessmentDAO {
             SELECT 
                 'Assessment' as type,
                 'Form Submitted' as action,
-                'Form: ' || f.form_id as details,
+                CASE 
+                    WHEN f.form_id = 'form-05-uuid' THEN 'Nursing Assessment - ' || p.full_name
+                    ELSE 'Radiology Report - ' || p.full_name
+                END as details,
                 f.submitted_at as timestamp,
                 u.username as user
             FROM form_submissions f
+            JOIN patient_visits v ON f.visit_id = v.visit_id
+            JOIN patients p ON v.patient_ssn = p.ssn
             LEFT JOIN users u ON f.submitted_by = u.user_id
             ORDER BY timestamp DESC
             LIMIT ?
@@ -220,7 +225,7 @@ class AssessmentDAO {
      * @returns {string}
      */
     static generateAssessmentId(prefix = 'assess') {
-        return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        return `${prefix} -${Date.now()} -${Math.random().toString(36).substr(2, 9)} `;
     }
 
     /**

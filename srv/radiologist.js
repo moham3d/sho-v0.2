@@ -67,7 +67,16 @@ module.exports = function (app, db, requireAuth, requireRole) {
     app.get('/radiologist/history', requireAuth, requireRole('radiologist'), async (req, res) => {
         try {
             const query = req.query.q || '';
-            const history = await daos.visits.searchRadiologistHistory(req.session.userId, query);
+            const page = parseInt(req.query.page) || 1;
+            const limit = 10;
+            const offset = (page - 1) * limit;
+
+            const [history, totalCount] = await Promise.all([
+                daos.visits.searchRadiologistHistory(req.session.userId, query, limit, offset),
+                daos.visits.countRadiologistHistory(req.session.userId, query)
+            ]);
+
+            const totalPages = Math.ceil(totalCount / limit);
 
             // Process dates
             (history || []).forEach(visit => {
@@ -79,6 +88,8 @@ module.exports = function (app, db, requireAuth, requireRole) {
                 user: req.session,
                 history: history || [],
                 searchQuery: query,
+                currentPage: page,
+                totalPages: totalPages,
                 moment: require('moment')
             });
         } catch (err) {

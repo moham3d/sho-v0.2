@@ -17,16 +17,15 @@ module.exports = function (app, db, requireAuth, requireRole) {
                 daos.assessments.count()
             ]);
 
-            // Chart data using DAOs
-            const [statusStats, deptStats, visitsOverTime, todayStats] = await Promise.all([
-                daos.visits.getStatusDistribution(),
-                daos.visits.getDepartmentDistribution(),
-                daos.visits.getVisitsOverTime(7),
-                daos.visits.getTodayStats()
-            ]);
+            const todayStats = await daos.visits.getTodayStats();
 
-            // Recent activity
-            const recentActivity = await daos.assessments.getRecentActivity(10);
+            // Report Search
+            let searchResults = [];
+            const searchQuery = req.query.report_search || '';
+
+            if (searchQuery) {
+                searchResults = await daos.visits.searchCompletedReports(searchQuery);
+            }
 
             // Get recent users for the dashboard
             const users = await daos.users.findRecent(5);
@@ -34,6 +33,8 @@ module.exports = function (app, db, requireAuth, requireRole) {
             res.render('admin', {
                 user: req.session,
                 users: users,
+                searchQuery: searchQuery,
+                searchResults: searchResults,
                 stats: {
                     users: userCount,
                     patients: patientCount,
@@ -43,17 +44,78 @@ module.exports = function (app, db, requireAuth, requireRole) {
                     today_completed: todayStats ? todayStats.completed : 0
                 },
                 charts: {
-                    status: statusStats,
-                    departments: deptStats,
-                    timeline: visitsOverTime
+                    status: [], // Empty arrays to prevent EJS errors if referenced
+                    departments: [],
+                    timeline: []
                 },
-                activity: recentActivity
+                activity: [] // Empty as we are replacing it with search
             });
 
         } catch (err) {
             console.error('Dashboard Error:', err);
             res.status(500).send('Database error loading dashboard');
         }
+    });
+
+    // Data Export Routes
+    app.get('/admin/export/patients', requireAuth, requireRole('admin'), (req, res) => {
+        const sql = `SELECT ssn, full_name, medical_number, mobile_number, gender, date_of_birth, address, created_at FROM patients ORDER BY created_at DESC`;
+
+        db.all(sql, [], (err, rows) => {
+            if (err) {
+                console.error('Export Error:', err);
+                return res.status(500).send('Error exporting data');
+            }
+
+            // CSV Header
+            let csv = 'SSN,Full Name,Medical Number,Mobile Number,Gender,Date of Birth,Address,Created At\n';
+
+            // CSV Rows
+            rows.forEach(row => {
+                const escapedAddress = row.address ? `"${row.address.replace(/"/g, '""')}"` : '';
+                const escapedName = row.full_name ? `"${row.full_name.replace(/"/g, '""')}"` : '';
+
+                csv += `${row.ssn},${escapedName},${row.medical_number || ''},${row.mobile_number || ''},${row.gender || ''},${row.date_of_birth || ''},${escapedAddress},${row.created_at || ''}\n`;
+            });
+
+            res.setHeader('Content-Type', 'text/csv');
+            res.setHeader('Content-Disposition', 'attachment; filename=patients_export_' + new Date().toISOString().split('T')[0] + '.csv');
+            res.send(csv);
+        });
+    });
+
+    app.get('/admin/export/visits', requireAuth, requireRole('admin'), (req, res) => {
+        const sql = `
+            SELECT pv.visit_id, pv.visit_date, pv.visit_status, pv.department, u.full_name as consultant_name, 
+                   pv.patient_ssn, p.full_name as patient_name, p.medical_number
+            FROM patient_visits pv
+            JOIN patients p ON pv.patient_ssn = p.ssn
+            LEFT JOIN users u ON pv.created_by = u.user_id
+            ORDER BY pv.visit_date DESC
+        `;
+
+        db.all(sql, [], (err, rows) => {
+            if (err) {
+                console.error('Export Error:', err);
+                return res.status(500).send('Error exporting data');
+            }
+
+            // CSV Header
+            let csv = 'Visit ID,Date,Status,Department,Consultant,Patient SSN,Patient Name,Medical Number\n';
+
+            // CSV Rows
+            rows.forEach(row => {
+                const escapedName = row.patient_name ? `"${row.patient_name.replace(/"/g, '""')}"` : '';
+                const escapedConsultant = row.consultant_name ? `"${row.consultant_name.replace(/"/g, '""')}"` : '';
+                const date = row.visit_date ? new Date(row.visit_date).toLocaleString() : '';
+
+                csv += `${row.visit_id},"${date}",${row.visit_status},${row.department || ''},${escapedConsultant},${row.patient_ssn},${escapedName},${row.medical_number || ''}\n`;
+            });
+
+            res.setHeader('Content-Type', 'text/csv');
+            res.setHeader('Content-Disposition', 'attachment; filename=visits_export_' + new Date().toISOString().split('T')[0] + '.csv');
+            res.send(csv);
+        });
     });
 
     app.get('/admin/users', requireAuth, requireRole('admin'), (req, res) => {
