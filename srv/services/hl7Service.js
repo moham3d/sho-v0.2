@@ -215,10 +215,10 @@ function startHL7Server(port, db) {
             let vtIndex = buffer.indexOf('\x0b');
             let fsIndex = buffer.indexOf('\x1c\r', vtIndex);
 
-            console.log(`[HL7 DEBUG] Buffer len: ${buffer.length}, VT: ${vtIndex}, FS: ${fsIndex}`);
-            if (buffer.length > 0) {
-                console.log(`[HL7 DEBUG] Buffer end (hex): ${Buffer.from(buffer.slice(-10)).toString('hex')}`);
-            }
+            // console.log(`[HL7 DEBUG] Buffer len: ${buffer.length}, VT: ${vtIndex}, FS: ${fsIndex}`);
+            // if (buffer.length > 0) {
+            //     console.log(`[HL7 DEBUG] Buffer end (hex): ${Buffer.from(buffer.slice(-10)).toString('hex')}`);
+            // }
 
             while (vtIndex >= 0 && fsIndex > vtIndex) {
                 // Extract the HL7 message

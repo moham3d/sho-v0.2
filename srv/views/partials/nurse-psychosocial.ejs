@@ -23,10 +23,10 @@
             </select>
         </div>
         <div class="col-md-6">
-            <label class="form-label">Smoker: مدخن</label>
+            <label class="form-label d-block">Smoker: مدخن</label>
             <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" name="is_smoker" <%=assessment && assessment.is_smoker
-                    ? 'checked' : '' %> aria-label="Patient is a smoker">
+                <input class="form-check-input" type="checkbox" name="is_smoker" id="isSmoker" <%=assessment &&
+                    assessment.is_smoker ? 'checked' : '' %> aria-label="Patient is a smoker" style="margin-left: 0;">
             </div>
         </div>
         <div class="col-12">
@@ -45,13 +45,32 @@
                 </div>
             </div>
             <div class="mt-2">
-                <input type="text" class="form-control" name="medication_allergies"
+                <!-- Medication Allergies -->
+                <input type="text" class="form-control" name="medication_allergies" list="medAllergyList"
                     placeholder="Medication allergies: لديه حساسية تجاه الأدوية"
                     value="<%= assessment ? assessment.medication_allergies : '' %>"
                     aria-label="List of medication allergies">
-                <input type="text" class="form-control mt-2" name="food_allergies"
+                <datalist id="medAllergyList">
+                    <% if (typeof commonValues !=='undefined' && commonValues.medication_allergies) { %>
+                        <% commonValues.medication_allergies.forEach(function(val) { %>
+                            <option value="<%= val %>">
+                                <% }); %>
+                                    <% } %>
+                </datalist>
+
+                <!-- Food Allergies -->
+                <input type="text" class="form-control mt-2" name="food_allergies" list="foodAllergyList"
                     placeholder="Food allergies: لديه حساسية تجاه الطعام"
                     value="<%= assessment ? assessment.food_allergies : '' %>" aria-label="List of food allergies">
+                <datalist id="foodAllergyList">
+                    <% if (typeof commonValues !=='undefined' && commonValues.food_allergies) { %>
+                        <% commonValues.food_allergies.forEach(function(val) { %>
+                            <option value="<%= val %>">
+                                <% }); %>
+                                    <% } %>
+                </datalist>
+
+                <!-- Other Allergies -->
                 <input type="text" class="form-control mt-2" name="other_allergies"
                     placeholder="Other allergies: حساسية أخرى"
                     value="<%= assessment ? assessment.other_allergies : '' %>" aria-label="List of other allergies">

@@ -14,19 +14,40 @@
         </div>
         <div class="col-md-6">
             <label class="form-label">Pain Location</label>
-            <input type="text" class="form-control" name="pain_location"
+            <input type="text" class="form-control" name="pain_location" list="painLocationList"
                 value="<%= assessment ? assessment.pain_location : '' %>" aria-label="Location of patient's pain">
+            <datalist id="painLocationList">
+                <% if (typeof commonValues !=='undefined' && commonValues.pain_location) { %>
+                    <% commonValues.pain_location.forEach(function(val) { %>
+                        <option value="<%= val %>">
+                            <% }); %>
+                                <% } %>
+            </datalist>
         </div>
         <div class="col-md-6">
             <label class="form-label">Pain Frequency</label>
-            <input type="text" class="form-control" name="pain_frequency"
+            <input type="text" class="form-control" name="pain_frequency" list="painFrequencyList"
                 value="<%= assessment ? assessment.pain_frequency : '' %>" aria-label="Frequency of patient's pain">
+            <datalist id="painFrequencyList">
+                <% if (typeof commonValues !=='undefined' && commonValues.pain_frequency) { %>
+                    <% commonValues.pain_frequency.forEach(function(val) { %>
+                        <option value="<%= val %>">
+                            <% }); %>
+                                <% } %>
+            </datalist>
         </div>
         <div class="col-md-6">
             <label class="form-label">Pain Character</label>
-            <input type="text" class="form-control" name="pain_character"
+            <input type="text" class="form-control" name="pain_character" list="painCharacterList"
                 value="<%= assessment ? assessment.pain_character : '' %>"
                 aria-label="Description of patient's pain character">
+            <datalist id="painCharacterList">
+                <% if (typeof commonValues !=='undefined' && commonValues.pain_character) { %>
+                    <% commonValues.pain_character.forEach(function(val) { %>
+                        <option value="<%= val %>">
+                            <% }); %>
+                                <% } %>
+            </datalist>
         </div>
     </div>
 </div>

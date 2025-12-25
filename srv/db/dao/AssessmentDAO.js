@@ -229,6 +229,33 @@ class AssessmentDAO {
     }
 
     /**
+     * Get most common values for a specific column in nursing assessments
+     * @param {string} column - Column name (e.g., 'pain_location', 'pain_character')
+     * @param {number} limit - Maximum results
+     * @returns {Promise<Array>}
+     */
+    async getCommonValues(column, limit = 5) {
+        // Allow-list for security to prevent SQL injection
+        const allowedColumns = [
+            'chief_complaint', 'pain_location', 'pain_character', 'pain_frequency',
+            'medication_allergies', 'food_allergies', 'other_allergies'
+        ];
+
+        if (!allowedColumns.includes(column)) {
+            return [];
+        }
+
+        return this._all(`
+            SELECT ${column} as value, COUNT(*) as count 
+            FROM nursing_assessments 
+            WHERE ${column} IS NOT NULL AND ${column} != '' 
+            GROUP BY ${column} 
+            ORDER BY count DESC 
+            LIMIT ?
+        `, [limit]);
+    }
+
+    /**
      * Generate a unique submission ID
      * @returns {string}
      */

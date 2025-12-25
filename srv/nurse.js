@@ -314,10 +314,23 @@ module.exports = function (app, db, requireAuth, requireRole) {
                 return res.status(404).send('Visit not found');
             }
 
-            // Get user's signature and assessment data in parallel
-            const [userSignature, assessmentResult] = await Promise.all([
+            // Get user's signature, assessment data, and common values in parallel
+            const [userSignature, assessmentResult, commonValues] = await Promise.all([
                 daos.assessments.getUserSignature(req.session.userId),
-                daos.assessments.findNursingByVisitId(visitId)
+                daos.assessments.findNursingByVisitId(visitId),
+                Promise.all([
+                    daos.assessments.getCommonValues('pain_location'),
+                    daos.assessments.getCommonValues('pain_character'),
+                    daos.assessments.getCommonValues('pain_frequency'),
+                    daos.assessments.getCommonValues('medication_allergies'),
+                    daos.assessments.getCommonValues('food_allergies')
+                ]).then(([painLoc, painChar, painFreq, medAllergy, foodAllergy]) => ({
+                    pain_location: painLoc.map(r => r.value),
+                    pain_character: painChar.map(r => r.value),
+                    pain_frequency: painFreq.map(r => r.value),
+                    medication_allergies: medAllergy.map(r => r.value),
+                    food_allergies: foodAllergy.map(r => r.value)
+                }))
             ]);
 
             const assessment = assessmentResult || null;
@@ -335,7 +348,9 @@ module.exports = function (app, db, requireAuth, requireRole) {
                 assessment: assessment,
                 isCompleted: isCompleted,
                 assessmentSignature: assessmentSignature,
-                userSignature: userSignature ? userSignature.signature_data : null
+                assessmentSignature: assessmentSignature,
+                userSignature: userSignature ? userSignature.signature_data : null,
+                commonValues: commonValues
             });
         } catch (err) {
             console.error('Error loading assessment:', err);
