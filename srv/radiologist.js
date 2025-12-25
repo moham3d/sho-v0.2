@@ -1,7 +1,9 @@
 const sqlite3 = require('sqlite3').verbose();
 const { parseHL7Date, calculateAge, getAgeCategory } = require('./utils/dateHelpers');
+const { createDAOs } = require('./db/dao');
 
-module.exports = function(app, db, requireAuth, requireRole) {
+module.exports = function (app, db, requireAuth, requireRole) {
+    const daos = createDAOs(db);
 
     // Radiologist dashboard route
     app.get('/radiologist', requireAuth, requireRole('radiologist'), (req, res) => {
@@ -46,64 +48,43 @@ module.exports = function(app, db, requireAuth, requireRole) {
                 waitingVisits = [];
             }
 
-            // Get completed visits that have both nursing and radiology assessments completed
-            // Includes both standard radiology forms and PET CT forms
-            db.all(`
-                SELECT
-                    pv.visit_id, pv.patient_ssn, pv.visit_date, pv.visit_status,
-                    pv.primary_diagnosis, pv.secondary_diagnosis, pv.diagnosis_code,
-                    pv.visit_type, pv.department, pv.created_at,
-                    p.full_name as patient_name, p.medical_number, p.date_of_birth, p.gender,
-                    na.assessment_id, fs.submission_status as nursing_status,
-                    nus.signature_data as nurse_signature,
-                    ref.id as radiology_form_entry_id, ref.form_status as radiology_status,
-                    ref.radiologist_signature_id as radiologist_signature_id,
-                    rus.signature_data as radiologist_signature,
-                    pet.record_id as pet_ct_record_id, pet.form_status as pet_ct_status,
-                    CASE 
-                        WHEN pet.record_id IS NOT NULL THEN 'PET CT'
-                        WHEN ref.id IS NOT NULL THEN 'Radiology'
-                        ELSE NULL
-                    END as form_type
-                FROM patient_visits pv
-                JOIN patients p ON pv.patient_ssn = p.ssn
-                LEFT JOIN form_submissions fs ON fs.visit_id = pv.visit_id AND fs.form_id = 'form-05-uuid'
-                LEFT JOIN nursing_assessments na ON na.submission_id = fs.submission_id
-                LEFT JOIN user_signatures nus ON na.nurse_signature_id = nus.signature_id
-                LEFT JOIN radiology_examination_form ref ON ref.patient_id = p.ssn AND ref.visit_id = pv.visit_id
-                LEFT JOIN user_signatures rus ON ref.radiologist_signature_id = rus.signature_id
-                LEFT JOIN pet_ct_records pet ON pet.patient_id = p.ssn AND pet.visit_id = pv.visit_id
-                WHERE pv.visit_status = 'completed'
-                AND fs.submission_status = 'submitted'
-                AND (ref.form_status = 'completed' OR pet.form_status = 'completed')
-                ORDER BY pv.visit_date DESC, pv.created_at DESC
-                LIMIT 10
-            `, [], (err, completedVisits) => {
-                if (err) {
-                    console.error('Error getting radiologist completed visits for dashboard:', err);
-                    completedVisits = [];
-                }
+            // Process visits to add parsed dates and ages
+            (waitingVisits || []).forEach(visit => {
+                visit.parsed_date_of_birth = parseHL7Date(visit.date_of_birth);
+                visit.calculated_age = calculateAge(visit.date_of_birth);
+            });
 
-                // Process visits to add parsed dates and ages
-                (waitingVisits || []).forEach(visit => {
-                    visit.parsed_date_of_birth = parseHL7Date(visit.date_of_birth);
-                    visit.calculated_age = calculateAge(visit.date_of_birth);
-                });
-
-                (completedVisits || []).forEach(visit => {
-                    visit.parsed_date_of_birth = parseHL7Date(visit.date_of_birth);
-                    visit.calculated_age = calculateAge(visit.date_of_birth);
-                });
-
-                res.render('radiologist-dashboard', {
-                    user: req.session,
-                    waitingVisits: waitingVisits || [],
-                    completedVisits: completedVisits || [],
-                    selectedPatient: req.session.selectedPatient || null,
-                    selectedVisit: req.session.selectedVisit || null
-                });
+            res.render('radiologist-dashboard', {
+                user: req.session,
+                waitingVisits: waitingVisits || [],
+                selectedPatient: req.session.selectedPatient || null,
+                selectedVisit: req.session.selectedVisit || null
             });
         });
+    });
+
+    // Radiologist history route
+    app.get('/radiologist/history', requireAuth, requireRole('radiologist'), async (req, res) => {
+        try {
+            const query = req.query.q || '';
+            const history = await daos.visits.searchRadiologistHistory(req.session.userId, query);
+
+            // Process dates
+            (history || []).forEach(visit => {
+                visit.parsed_date_of_birth = parseHL7Date(visit.date_of_birth);
+                visit.calculated_age = calculateAge(visit.date_of_birth);
+            });
+
+            res.render('radiologist-history', {
+                user: req.session,
+                history: history || [],
+                searchQuery: query,
+                moment: require('moment')
+            });
+        } catch (err) {
+            console.error('Error loading radiologist history:', err);
+            res.status(500).send('Database error');
+        }
     });
 
     // Radiologist start assessment route - direct access with visit_id
@@ -246,7 +227,7 @@ module.exports = function(app, db, requireAuth, requireRole) {
                     // Create new visit
                     const visitId = 'visit-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
                     db.run('INSERT INTO patient_visits (visit_id, patient_ssn, created_by) VALUES (?, ?, ?)',
-                        [visitId, ssn, req.session.userId], function(err) {
+                        [visitId, ssn, req.session.userId], function (err) {
                             if (err) {
                                 console.error('Error creating visit:', err);
                                 return res.render('radiologist-dashboard', { user: req.session, patient: patient, error: 'Error creating visit' });
@@ -364,7 +345,7 @@ module.exports = function(app, db, requireAuth, requireRole) {
                 [radiologistSignatureData, signatureId] :
                 [signatureId, req.session.userId, radiologistSignatureData];
 
-            db.run(signatureSql, signatureValues, function(sigErr) {
+            db.run(signatureSql, signatureValues, function (sigErr) {
                 if (sigErr) {
                     console.error('Error saving signature:', sigErr);
                     return res.status(500).send('Error saving signature');
@@ -458,7 +439,7 @@ module.exports = function(app, db, requireAuth, requireRole) {
                         formData.radiologist_notes || null
                     ];
 
-                    db.run(sql, values, function(err) {
+                    db.run(sql, values, function (err) {
                         if (err) {
                             console.error('Error inserting radiology examination form:', err.message);
                             return res.status(500).send('Error saving assessment');
@@ -467,7 +448,7 @@ module.exports = function(app, db, requireAuth, requireRole) {
                         // Create form submission entry linking to the visit
                         const submissionId = 'sub-rad-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
                         db.run('INSERT INTO form_submissions (submission_id, visit_id, form_id, submitted_by, submission_status) VALUES (?, ?, ?, ?, ?)',
-                            [submissionId, selectedVisit.visit_id, 'form-03-uuid', req.session.userId, 'submitted'], function(fsErr) {
+                            [submissionId, selectedVisit.visit_id, 'form-03-uuid', req.session.userId, 'submitted'], function (fsErr) {
                                 if (fsErr) {
                                     console.error('Error creating form submission for radiology:', fsErr);
                                     return res.status(500).send('Error creating form submission');
@@ -475,7 +456,7 @@ module.exports = function(app, db, requireAuth, requireRole) {
 
                                 // Mark visit as completed after radiology assessment
                                 db.run('UPDATE patient_visits SET visit_status = ?, updated_at = CURRENT_TIMESTAMP WHERE visit_id = ?',
-                                    ['completed', selectedVisit.visit_id], function(updateErr) {
+                                    ['completed', selectedVisit.visit_id], function (updateErr) {
                                         if (updateErr) {
                                             console.error('Error updating visit status:', updateErr);
                                             // Don't fail the whole operation, just log the error
@@ -489,7 +470,7 @@ module.exports = function(app, db, requireAuth, requireRole) {
                                 res.redirect('/radiologist');
                             });
                     });
-                }                proceedWithRadiologySubmission();
+                } proceedWithRadiologySubmission();
             });
         });
     });
@@ -521,7 +502,7 @@ module.exports = function(app, db, requireAuth, requireRole) {
             const sigSql = existingSig ? 'UPDATE user_signatures SET signature_data = ?, updated_at = CURRENT_TIMESTAMP WHERE signature_id = ?' : 'INSERT INTO user_signatures (signature_id, user_id, signature_data) VALUES (?, ?, ?)';
             const sigParams = existingSig ? [formData.radiologist_signature, signatureId] : [signatureId, req.session.userId, formData.radiologist_signature];
 
-            db.run(sigSql, sigParams, function(sigErr) {
+            db.run(sigSql, sigParams, function (sigErr) {
                 if (sigErr) {
                     console.error('Error saving radiologist signature for PET scan:', sigErr);
                     return res.status(500).send('Error saving signature');
@@ -611,7 +592,7 @@ module.exports = function(app, db, requireAuth, requireRole) {
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `;
 
-                db.run(petInsertSql, petParams, function(petErr) {
+                db.run(petInsertSql, petParams, function (petErr) {
                     if (petErr) {
                         console.error('Error inserting PET CT record:', petErr);
                         return res.status(500).send('Error saving PET CT record');
@@ -620,7 +601,7 @@ module.exports = function(app, db, requireAuth, requireRole) {
                     // Create form submission entry linking to the visit
                     const submissionId = 'sub-pet-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
                     db.run('INSERT INTO form_submissions (submission_id, visit_id, form_id, submitted_by, submission_status) VALUES (?, ?, ?, ?, ?)',
-                        [submissionId, visitId, 'form-06-uuid', req.session.userId, 'submitted'], function(fsErr) {
+                        [submissionId, visitId, 'form-06-uuid', req.session.userId, 'submitted'], function (fsErr) {
                             if (fsErr) {
                                 console.error('Error creating form submission for PET CT:', fsErr);
                                 return res.status(500).send('Error creating form submission');
@@ -628,7 +609,7 @@ module.exports = function(app, db, requireAuth, requireRole) {
 
                             // Optionally mark visit as in_progress -> completed depending on form_status
                             const newVisitStatus = (formData.form_status === 'completed') ? 'completed' : 'in_progress';
-                            db.run('UPDATE patient_visits SET visit_status = ?, updated_at = CURRENT_TIMESTAMP WHERE visit_id = ?', [newVisitStatus, visitId], function(updErr) {
+                            db.run('UPDATE patient_visits SET visit_status = ?, updated_at = CURRENT_TIMESTAMP WHERE visit_id = ?', [newVisitStatus, visitId], function (updErr) {
                                 if (updErr) {
                                     console.error('Error updating visit status after PET CT submission:', updErr);
                                 }

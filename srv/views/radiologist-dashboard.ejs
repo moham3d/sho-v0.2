@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,76 +13,94 @@
         .navbar-brand {
             font-weight: bold;
         }
+
         .navbar-brand i {
             color: #ffffff;
         }
+
         .navbar-nav .nav-link {
             font-weight: 500;
             transition: color 0.3s ease;
         }
+
         .navbar-nav .nav-link:hover {
             color: rgba(255, 255, 255, 0.8) !important;
         }
+
         .navbar-nav .nav-link.active {
             color: #ffffff !important;
             background-color: rgba(255, 255, 255, 0.1);
             border-radius: 5px;
         }
+
         .user-info {
             font-size: 0.9em;
             color: rgba(255, 255, 255, 0.9);
         }
+
         .user-role {
             font-weight: 600;
             text-transform: capitalize;
         }
+
         .logout-btn {
             border: 1px solid rgba(255, 255, 255, 0.3);
             transition: all 0.3s ease;
         }
+
         .logout-btn:hover {
             background-color: rgba(255, 255, 255, 0.1);
             border-color: rgba(255, 255, 255, 0.5);
         }
+
         .card {
             border: none;
             border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             transition: transform 0.2s;
         }
+
         .card:hover {
             transform: translateY(-2px);
         }
+
         .btn-custom {
             border-radius: 25px;
             padding: 12px 30px;
             font-size: 1.1em;
         }
+
         .icon-large {
             font-size: 3em;
             margin-bottom: 15px;
         }
+
         .card-title {
             font-weight: 600;
             margin-bottom: 10px;
         }
+
         .stats-card {
             background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
             color: white;
         }
+
         .quick-actions {
             background: #34495e;
             color: white;
         }
+
         .search-card {
             background: #f8f9fa;
             color: #2c3e50;
             border: 2px solid #e1e5e9;
         }
+
         .ssn-input {
             font-size: 1.2em;
             letter-spacing: 2px;
         }
+
         .patient-info {
             background-color: #f8f9fa;
             border-left: 4px solid #34495e;
@@ -95,362 +114,340 @@
         }
     </style>
 </head>
+
 <body>
     <!-- Navigation -->
     <%- include('navigation', { currentPage: 'dashboard' }) %>
 
-    <div class="container mt-4">
-        <!-- Header -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="text-center">
-                    <h1><i class="fas fa-user-md me-2 text-success"></i>Radiologist Dashboard</h1>
-                    <p class="text-muted">Manage radiology assessments and imaging reports</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Waiting Visits (Patients ready for radiology assessment) -->
-        <% if (waitingVisits && waitingVisits.length > 0) { %>
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header bg-info text-dark d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0">
-                            <i class="fas fa-clock me-2"></i>Waiting for Radiology Assessment
-                        </h4>
-                        <div class="d-flex align-items-center">
-                            <label for="ssnFilter" class="text-white me-2 mb-0">
-                                <i class="fas fa-search me-1"></i>Filter by SSN:
-                            </label>
-                            <input type="text" id="ssnFilter" class="form-control form-control-sm" placeholder="Enter SSN..." style="width: 200px;">
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted">Patients who have completed nursing assessments and are ready for radiology evaluation.</p>
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Patient Name</th>
-                                        <th>SSN</th>
-                                        <th>Visit Date</th>
-                                        <th>Nursing Status</th>
-                                        <th>Radiology Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <% waitingVisits.forEach(visit => { %>
-                                    <tr>
-                                        <td>
-                                            <strong><%= visit.patient_name %></strong>
-                                            <% if (visit.recommended_form === 'pet-scan') { %>
-                                                <br><small class="text-warning"><span class="badge bg-warning text-dark mt-1">Recommended: PET CT</span></small>
-                                            <% } else { %>
-                                                <br><small class="text-muted"><span class="badge bg-secondary mt-1">Standard Radiology</span></small>
-                                            <% } %>
-                                            <% if (visit.medical_number) { %>
-                                                <br><small class="text-muted">ID: <%= visit.medical_number %></small>
-                                            <% } %>
-                                        </td>
-                                        <td><%= visit.patient_ssn %></td>
-                                        <td><%= visit.visit_date ? new Date(visit.visit_date).toLocaleDateString() : 'Not set' %></td>
-                                        <td>
-                                            <span class="badge bg-success">
-                                                <i class="fas fa-check-circle me-1"></i>Completed
-                                            </span>
-                                            <% if (visit.nurse_signature) { %>
-                                                <br><small class="text-success"><i class="fas fa-signature me-1"></i>Signed</small>
-                                            <% } else { %>
-                                                <br><small class="text-warning"><i class="fas fa-signature me-1"></i>Unsigned</small>
-                                            <% } %>
-                                        </td>
-                                        <td>
-                                            <% if (visit.radiology_status === 'submitted') { %>
-                                                <span class="badge bg-success">
-                                                    <i class="fas fa-check-circle me-1"></i>Completed
-                                                </span>
-                                                <% if (visit.radiologist_signature) { %>
-                                                    <br><small class="text-success"><i class="fas fa-signature me-1"></i>Signed</small>
-                                                <% } else { %>
-                                                    <br><small class="text-warning"><i class="fas fa-signature me-1"></i>Unsigned</small>
-                                                <% } %>
-                                            <% } else { %>
-                                                <span class="badge bg-warning">
-                                                    <i class="fas fa-clock me-1"></i>Pending
-                                                </span>
-                                            <% } %>
-                                        </td>
-                                        <td>
-                                            <% if (visit.visit_status === 'completed' || visit.radiology_status === 'submitted') { %>
-                                                <a href="/radiologist/view-assessment/<%= visit.visit_id %>" class="btn btn-success btn-sm">
-                                                    <i class="fas fa-eye me-1"></i>View Assessment
-                                                </a>
-                                            <% } else { %>
-                                                <button type="button" class="btn btn-primary btn-sm" onclick="openFormSelectionModal('<%= visit.visit_id %>', '<%= visit.patient_name %>', '<%= visit.recommended_form %>')">
-                                                    <i class="fas fa-x-ray me-1"></i>Start Assessment
-                                                </button>
-                                            <% } %>
-                                        </td>
-                                    </tr>
-                                    <% }); %>
-                                </tbody>
-                            </table>
-                        </div>
+        <div class="container mt-4">
+            <!-- Header -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="text-center">
+                        <h1><i class="fas fa-user-md me-2 text-success"></i>Radiologist Dashboard</h1>
+                        <p class="text-muted">Manage radiology assessments and imaging reports</p>
                     </div>
                 </div>
             </div>
-        </div>
-        <% } %>
 
-        <!-- Toggle Button for Completed Assessments -->
-        <% if (completedVisits && completedVisits.length > 0) { %>
-            <div class="col-12 mt-3">
-                <div class="text-center">
-                    <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#completedAssessmentsSection" aria-expanded="false" aria-controls="completedAssessmentsSection">
-                        <i class="fas fa-list me-1"></i>View Completed Assessments
-                    </button>
-                </div>
-            </div>
-        <% } %>
-
-        <!-- Completed Assessments Section -->
-        <% if (completedVisits && completedVisits.length > 0) { %>
-            <div class="col-12 mt-4">
-            </br>
-                <div class="card h-100 collapse" id="completedAssessmentsSection">
-                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                        <h4 class="card-title mb-0">
-                            <i class="fas fa-check-circle me-2"></i>Completed Assessments
-                        </h4>
-                        <div class="d-flex align-items-center">
-                            <label for="completedFilter" class="text-white me-2 mb-0">
-                                <i class="fas fa-search me-1"></i>Filter by Name/SSN:
-                            </label>
-                            <input type="text" id="completedFilter" class="form-control form-control-sm" placeholder="Search..." style="width: 200px;">
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted">Previously completed radiology assessments.</p>
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0" id="completedAssessmentsTable">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th><i class="fas fa-calendar me-1" aria-hidden="true"></i>Date</th>
-                                        <th><i class="fas fa-user me-1" aria-hidden="true"></i>Patient</th>
-                                        <th><i class="fas fa-tasks me-1" aria-hidden="true"></i>Nursing Status</th>
-                                        <th><i class="fas fa-x-ray me-1" aria-hidden="true"></i>Radiology Status</th>
-                                        <th><i class="fas fa-cogs me-1" aria-hidden="true"></i>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <% completedVisits.forEach(visit => { %>
-                                        <tr data-patient-name="<%= visit.patient_name.toLowerCase() %>" data-patient-ssn="<%= visit.patient_ssn %>">
-                                            <td>
-                                                <div>
-                                                    <strong><%= new Date(visit.visit_date).toLocaleDateString() %></strong>
-                                                    <br>
-                                                    <small class="text-muted"><%= new Date(visit.visit_date).toLocaleTimeString() %></small>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div>
-                                                    <strong><%= visit.patient_name %></strong>
-                                                    <br>
-                                                    <small class="text-muted">
-                                                        SSN: <%= visit.patient_ssn %> | <%= visit.gender %>,
-                                                        <%= visit.calculated_age %> years old
-                                                    </small>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="assessment-status">
-                                                    <span class="badge bg-success">
-                                                        <i class="fas fa-check-circle me-1"></i>Completed
-                                                    </span>
-                                                    <% if (visit.nurse_signature) { %>
-                                                        <br><small class="text-success"><i class="fas fa-signature me-1"></i>Signed</small>
-                                                    <% } else { %>
-                                                        <br><small class="text-warning"><i class="fas fa-signature me-1"></i>Unsigned</small>
-                                                    <% } %>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="assessment-status">
-                                                    <span class="badge bg-success">
-                                                        <i class="fas fa-check-circle me-1"></i>Completed
-                                                    </span>
-                                                    <% if (visit.radiologist_signature) { %>
-                                                        <br><small class="text-success"><i class="fas fa-signature me-1"></i>Signed</small>
-                                                    <% } else { %>
-                                                        <br><small class="text-warning"><i class="fas fa-signature me-1"></i>Unsigned</small>
-                                                    <% } %>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="btn-group btn-group-sm" role="group">
-                                                    <a href="/radiologist/view-assessment/<%= visit.visit_id %>" class="btn btn-outline-primary" title="View Assessment" aria-label="View assessment for <%= visit.patient_name %>">
-                                                        <i class="fas fa-eye" aria-hidden="true"></i> View
-                                                    </a>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    <% }); %>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        <% } %>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // SSN Filter functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const ssnFilter = document.getElementById('ssnFilter');
-            const tableBody = document.querySelector('.table tbody');
-
-            if (ssnFilter && tableBody) {
-                ssnFilter.addEventListener('input', function() {
-                    const filterValue = this.value.trim().toLowerCase();
-                    const rows = tableBody.querySelectorAll('tr');
-
-                    rows.forEach(row => {
-                        const ssnCell = row.querySelector('td:nth-child(2)'); // SSN is in the second column
-                        if (ssnCell) {
-                            const ssnText = ssnCell.textContent.trim().toLowerCase();
-                            const shouldShow = filterValue === '' || ssnText.includes(filterValue);
-                            row.style.display = shouldShow ? '' : 'none';
-                        }
-                    });
-                });
-
-                // Clear filter when Escape key is pressed
-                ssnFilter.addEventListener('keydown', function(e) {
-                    if (e.key === 'Escape') {
-                        this.value = '';
-                        this.dispatchEvent(new Event('input'));
-                        this.blur();
-                    }
-                });
-            }
-        });
-
-        // Completed assessments filter functionality
-        document.getElementById('completedFilter').addEventListener('input', function(e) {
-            const filterValue = e.target.value.toLowerCase().trim();
-            const table = document.getElementById('completedAssessmentsTable');
-            const rows = table.querySelectorAll('tbody tr');
-
-            rows.forEach(row => {
-                const patientName = row.getAttribute('data-patient-name') || '';
-                const patientSsn = row.getAttribute('data-patient-ssn') || '';
-
-                const matchesName = patientName.includes(filterValue);
-                const matchesSsn = patientSsn.includes(filterValue);
-
-                if (filterValue === '' || matchesName || matchesSsn) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-        });
-
-        // Clear completed filter when Escape key is pressed
-        document.getElementById('completedFilter').addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                this.value = '';
-                this.dispatchEvent(new Event('input'));
-                this.blur();
-            }
-        });
-
-        // Form selection modal functions
-        window.openFormSelectionModal = function(visitId, patientName, recommendedForm) {
-            document.getElementById('formSelectionModal').dataset.visitId = visitId;
-            document.getElementById('modalPatientName').textContent = patientName;
-            // Highlight recommended card
-            const recommended = recommendedForm || 'radiology';
-            const petCard = document.querySelector('#formSelectionModal .card.border-success');
-            const radCard = document.querySelector('#formSelectionModal .card.border-primary');
-            if (recommended === 'pet-scan') {
-                petCard.classList.add('border-3');
-                radCard.classList.remove('border-3');
-            } else {
-                radCard.classList.add('border-3');
-                petCard.classList.remove('border-3');
-            }
-            const modal = new bootstrap.Modal(document.getElementById('formSelectionModal'));
-            modal.show();
-        };
-
-        window.selectForm = function(formType) {
-            const visitId = document.getElementById('formSelectionModal').dataset.visitId;
-            if (formType === 'radiology') {
-                window.location.href = `/radiologist/start-assessment/${visitId}`;
-            } else if (formType === 'pet-scan') {
-                window.location.href = `/radiologist/start-pet-scan/${visitId}`;
-            }
-        };
-    </script>
-
-    <!-- Form Selection Modal -->
-    <div class="modal fade" id="formSelectionModal" tabindex="-1" aria-labelledby="formSelectionModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="formSelectionModalLabel">
-                        <i class="fas fa-clipboard-list me-2"></i>Select Assessment Form
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="text-muted mb-3">Choose the appropriate form for the radiology assessment of patient: <strong id="modalPatientName"></strong></p>
-
-                    <div class="row g-3">
-                        <div class="col-12">
-                            <div class="card border-primary h-100" style="cursor: pointer;" onclick="selectForm('radiology')">
-                                <div class="card-body text-center">
-                                    <i class="fas fa-x-ray fa-3x text-primary mb-3"></i>
-                                    <h5 class="card-title">Radiology Examination Form</h5>
-                                    <p class="card-text text-muted">SH.MR.FRM.03 - Standard radiology examination with X-ray, CT, or MRI assessment</p>
-                                    <span class="badge bg-primary">Most Common</span>
+            <!-- Waiting Visits (Patients ready for radiology assessment) -->
+            <% if (waitingVisits && waitingVisits.length> 0) { %>
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm bg-white rounded-3">
+                            <div
+                                class="d-flex justify-content-between align-items-center mb-4 px-4 pt-4 pb-3 border-bottom">
+                                <h4 class="mb-0 text-primary fw-bold">
+                                    <i class="fas fa-clock me-2"></i>Waiting for Radiology Assessment
+                                </h4>
+                                <div class="d-flex align-items-center">
+                                    <label for="ssnFilter" class="text-muted me-2 mb-0 small fw-bold">
+                                        <i class="fas fa-filter me-1"></i>FILTER
+                                    </label>
+                                    <input type="text" id="ssnFilter"
+                                        class="form-control form-control-sm border-0 bg-light"
+                                        placeholder="Enter SSN..." style="width: 200px;">
+                                    <!-- Sorting Dropdown -->
+                                    <div class="dropdown ms-3">
+                                        <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button"
+                                            id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="fas fa-sort me-1"></i>Sort by Time
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0"
+                                            aria-labelledby="sortDropdown">
+                                            <li><a class="dropdown-item active" href="#"
+                                                    onclick="sortAssessments('newest', this)">Newest First</a></li>
+                                            <li><a class="dropdown-item" href="#"
+                                                    onclick="sortAssessments('oldest', this)">Oldest First</a></li>
+                                        </ul>
+                                    </div>
                                 </div>
                             </div>
+                            <div class="card-body">
+                                <p class="text-muted">Patients who have completed nursing assessments and are ready for
+                                    radiology evaluation.</p>
+                                <div class="row g-4" id="waitingVisitsContainer">
+                                    <% waitingVisits.forEach(visit=> { %>
+                                        <div class="col-md-6 col-lg-4 assessment-card"
+                                            data-timestamp="<%= new Date(visit.visit_date).getTime() %>"
+                                            data-patient-ssn="<%= visit.patient_ssn %>"
+                                            data-patient-name="<%= visit.patient_name.toLowerCase() %>">
+                                            <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
+                                                <div class="card-body p-4">
+                                                    <!-- Header: Date & Type -->
+                                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                                        <div>
+                                                            <div class="text-muted small fw-bold">
+                                                                <i class="far fa-calendar-alt me-1"></i>
+                                                                <%= new Date(visit.visit_date).toLocaleDateString() %>
+                                                            </div>
+                                                            <div class="small text-primary">
+                                                                <%= new Date(visit.visit_date).toLocaleTimeString() %>
+                                                            </div>
+                                                        </div>
+                                                        <% if (visit.recommended_form==='pet-scan' ) { %>
+                                                            <span class="badge bg-warning text-dark rounded-pill">
+                                                                <i class="fas fa-radiation me-1"></i>PET CT
+                                                            </span>
+                                                            <% } else { %>
+                                                                <span
+                                                                    class="badge bg-light text-muted border rounded-pill">
+                                                                    <i class="fas fa-x-ray me-1"></i>Standard
+                                                                </span>
+                                                                <% } %>
+                                                    </div>
+
+                                                    <!-- Patient Info -->
+                                                    <h5 class="card-title fw-bold text-dark mb-1">
+                                                        <%= visit.patient_name %>
+                                                    </h5>
+                                                    <p class="text-muted small mb-3">
+                                                        <i class="fas fa-fingerprint me-1"></i>SSN: <%=
+                                                            visit.patient_ssn %>
+                                                            <% if (visit.medical_number) { %>
+                                                                <span class="mx-1">•</span> ID: <%= visit.medical_number
+                                                                    %>
+                                                                    <% } %>
+                                                    </p>
+
+                                                    <!-- Status Badges -->
+                                                    <div class="mb-4">
+                                                        <div class="d-flex gap-2 flex-wrap">
+                                                            <!-- Nursing Status -->
+                                                            <div class="d-flex align-items-center">
+                                                                <span
+                                                                    class="badge bg-success-subtle text-success border border-success-subtle">
+                                                                    <i class="fas fa-user-nurse me-1"></i>Nurse: Done
+                                                                </span>
+                                                            </div>
+
+                                                            <!-- Radiology Status -->
+                                                            <div class="d-flex align-items-center">
+                                                                <% if (visit.radiology_status==='submitted' ) { %>
+                                                                    <span class="badge bg-success">
+                                                                        <i class="fas fa-check-circle me-1"></i>Done
+                                                                    </span>
+                                                                    <% } else { %>
+                                                                        <span class="badge bg-warning text-dark">
+                                                                            <i class="fas fa-clock me-1"></i>Pending
+                                                                        </span>
+                                                                        <% } %>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Actions -->
+                                                    <div class="d-grid">
+                                                        <% if (visit.visit_status==='completed' ||
+                                                            visit.radiology_status==='submitted' ) { %>
+                                                            <a href="/radiologist/view-assessment/<%= visit.visit_id %>"
+                                                                class="btn btn-outline-success">
+                                                                <i class="fas fa-eye me-2"></i>View Assessment
+                                                            </a>
+                                                            <% } else { %>
+                                                                <button type="button" class="btn btn-primary shadow-sm"
+                                                                    onclick="openFormSelectionModal('<%= visit.visit_id %>', '<%= visit.patient_name %>', '<%= visit.recommended_form %>')">
+                                                                    <i class="fas fa-play me-2"></i>Start Assessment
+                                                                </button>
+                                                                <% } %>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <% }); %>
+                                </div>
+
+                                <% if (waitingVisits.length===0) { %>
+                                    <div class="text-center py-5">
+                                        <div class="mb-3">
+                                            <i class="fas fa-check-circle text-muted fa-3x" style="opacity: 0.3;"></i>
+                                        </div>
+                                        <h5 class="text-muted">All caught up!</h5>
+                                        <p class="text-muted small">No waiting assessments at the moment.</p>
+                                    </div>
+                                    <% } %>
+                            </div>
+
+                            <script>
+                                function sortAssessments(order, element) {
+                                    // Update active state in dropdown
+                                    document.querySelectorAll('.dropdown-item').forEach(item => item.classList.remove('active'));
+                                    element.classList.add('active');
+
+                                    const container = document.getElementById('waitingVisitsContainer');
+                                    const cards = Array.from(container.querySelectorAll('.assessment-card'));
+
+                                    cards.sort((a, b) => {
+                                        const timeA = parseInt(a.dataset.timestamp);
+                                        const timeB = parseInt(b.dataset.timestamp);
+                                        return order === 'newest' ? timeB - timeA : timeA - timeB;
+                                    });
+
+                                    // Re-append to container (moves them)
+                                    cards.forEach(card => container.appendChild(card));
+
+                                    // Update button text
+                                    const btn = document.getElementById('sortDropdown');
+                                    btn.innerHTML = `<i class="fas fa-sort me-1"></i>Sort by: ${order.charAt(0).toUpperCase() + order.slice(1)}`;
+                                }
+
+                                // Initial sort (Newest First)
+                                document.addEventListener('DOMContentLoaded', () => {
+                                    const firstItem = document.querySelector('#sortDropdown + .dropdown-menu .dropdown-item');
+                                    if (firstItem) sortAssessments('newest', firstItem);
+                                });
+                            </script>
                         </div>
-                        <div class="col-12">
-                            <div class="card border-success h-100" style="cursor: pointer;" onclick="selectForm('pet-scan')">
-                                <div class="card-body text-center">
-                                    <i class="fas fa-atom fa-3x text-success mb-3"></i>
-                                    <h5 class="card-title">PET CT Medical Form</h5>
-                                    <p class="card-text text-muted">SH.MR.FRM.06 - Specialized PET CT examination with detailed medical history</p>
-                                    <span class="badge bg-success">Specialized</span>
+                    </div>
+                </div>
+                <% } %>
+
+
+
+                    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+                    <script>
+                        // SSN Filter functionality
+                        document.addEventListener('DOMContentLoaded', function () {
+                            const ssnFilter = document.getElementById('ssnFilter');
+                            const container = document.getElementById('waitingVisitsContainer');
+
+                            if (ssnFilter && container) {
+                                ssnFilter.addEventListener('input', function () {
+                                    const filterValue = this.value.trim().toLowerCase();
+                                    const cards = container.querySelectorAll('.assessment-card');
+
+                                    cards.forEach(card => {
+                                        const ssn = card.getAttribute('data-patient-ssn');
+                                        const name = card.getAttribute('data-patient-name');
+
+                                        const matchInfo = (ssn && ssn.includes(filterValue)) ||
+                                            (name && name.includes(filterValue));
+
+                                        if (filterValue === '' || matchInfo) {
+                                            card.style.display = '';
+                                            // Restore column classes if they were messed up, but display:none handles it
+                                            card.classList.remove('d-none');
+                                        } else {
+                                            card.style.display = 'none';
+                                            card.classList.add('d-none');
+                                        }
+                                    });
+
+                                    // Show "No results" if all hidden? Optional refinement
+                                });
+
+                                // Clear filter when Escape key is pressed
+                                ssnFilter.addEventListener('keydown', function (e) {
+                                    if (e.key === 'Escape') {
+                                        this.value = '';
+                                        this.dispatchEvent(new Event('input'));
+                                        this.blur();
+                                    }
+                                });
+                            }
+                        });
+
+
+
+                        // Form selection modal functions
+                        window.openFormSelectionModal = function (visitId, patientName, recommendedForm) {
+                            document.getElementById('formSelectionModal').dataset.visitId = visitId;
+                            document.getElementById('modalPatientName').textContent = patientName;
+                            // Highlight recommended card
+                            const recommended = recommendedForm || 'radiology';
+                            const petCard = document.querySelector('#formSelectionModal .card.border-success');
+                            const radCard = document.querySelector('#formSelectionModal .card.border-primary');
+                            if (recommended === 'pet-scan') {
+                                petCard.classList.add('border-3');
+                                radCard.classList.remove('border-3');
+                            } else {
+                                radCard.classList.add('border-3');
+                                petCard.classList.remove('border-3');
+                            }
+                            const modal = new bootstrap.Modal(document.getElementById('formSelectionModal'));
+                            modal.show();
+                        };
+
+                        window.selectForm = function (formType) {
+                            const visitId = document.getElementById('formSelectionModal').dataset.visitId;
+                            if (formType === 'radiology') {
+                                window.location.href = `/radiologist/start-assessment/${visitId}`;
+                            } else if (formType === 'pet-scan') {
+                                window.location.href = `/radiologist/start-pet-scan/${visitId}`;
+                            }
+                        };
+                    </script>
+
+                    <!-- Form Selection Modal -->
+                    <div class="modal fade" id="formSelectionModal" tabindex="-1"
+                        aria-labelledby="formSelectionModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="formSelectionModalLabel">
+                                        <i class="fas fa-clipboard-list me-2"></i>Select Assessment Form
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p class="text-muted mb-3">Choose the appropriate form for the
+                                        radiology assessment of patient: <strong id="modalPatientName"></strong></p>
+
+                                    <div class="row g-3">
+                                        <div class="col-12">
+                                            <div class="card border-primary h-100" style="cursor: pointer;"
+                                                onclick="selectForm('radiology')">
+                                                <div class="card-body text-center">
+                                                    <i class="fas fa-x-ray fa-3x text-primary mb-3"></i>
+                                                    <h5 class="card-title">Radiology Examination Form
+                                                    </h5>
+                                                    <p class="card-text text-muted">SH.MR.FRM.03 -
+                                                        Standard radiology examination with X-ray, CT,
+                                                        or MRI assessment</p>
+                                                    <span class="badge bg-primary">Most Common</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="card border-success h-100" style="cursor: pointer;"
+                                                onclick="selectForm('pet-scan')">
+                                                <div class="card-body text-center">
+                                                    <i class="fas fa-atom fa-3x text-success mb-3"></i>
+                                                    <h5 class="card-title">PET CT Medical Form</h5>
+                                                    <p class="card-text text-muted">SH.MR.FRM.06 -
+                                                        Specialized PET CT examination with detailed
+                                                        medical history</p>
+                                                    <span class="badge bg-success">Specialized</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="alert alert-info mt-3 form-selection-guide">
+                                        <div class="d-flex align-items-start">
+                                            <i class="fas fa-info-circle me-2 mt-1"></i>
+                                            <div>
+                                                <strong>Form Selection Guide:</strong>
+                                                <p class="mb-1">Use <strong>Radiology Examination
+                                                        Form</strong> for standard X‑Ray, CT, or MRI
+                                                    procedures.</p>
+                                                <p class="mb-0">Use <strong>PET CT Medical Form</strong>
+                                                    for PET CT scans requiring detailed oncology and
+                                                    treatment history.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary"
+                                        data-bs-dismiss="modal">Cancel</button>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="alert alert-info mt-3 form-selection-guide">
-                        <div class="d-flex align-items-start">
-                            <i class="fas fa-info-circle me-2 mt-1"></i>
-                            <div>
-                                <strong>Form Selection Guide:</strong>
-                                <p class="mb-1">Use <strong>Radiology Examination Form</strong> for standard X‑Ray, CT, or MRI procedures.</p>
-                                <p class="mb-0">Use <strong>PET CT Medical Form</strong> for PET CT scans requiring detailed oncology and treatment history.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                </div>
-            </div>
         </div>
-    </div>
-
-    </div>
 </body>
+
 </html>

@@ -27,21 +27,17 @@ module.exports = function (app, db, requireAuth, requireRole) {
             } : null;
 
             // Get current and completed visits using DAO
-            const [currentVisits, completedVisits] = await Promise.all([
-                daos.visits.findActiveForNurse(req.session.userId, 5),
-                daos.visits.findCompletedForNurse(req.session.userId, 10)
-            ]);
+            const currentVisits = await daos.visits.findActiveForNurse(req.session.userId, 5);
 
             // Process visits to add parsed dates and ages
             processVisitsWithAge(currentVisits);
-            processVisitsWithAge(completedVisits);
+
 
             res.render('nurse-dashboard', {
                 user: req.session,
                 notification: notification,
                 currentVisits: currentVisits || [],
-                completedVisits: completedVisits || [],
-                visits: (currentVisits || []).concat(completedVisits || []),
+                visits: currentVisits || [],
                 csrfToken: res.locals.csrfToken || ''
             });
         } catch (err) {
@@ -50,7 +46,6 @@ module.exports = function (app, db, requireAuth, requireRole) {
                 user: req.session,
                 notification: { type: 'error', message: 'Error loading dashboard' },
                 currentVisits: [],
-                completedVisits: [],
                 visits: [],
                 csrfToken: res.locals.csrfToken || ''
             });
@@ -97,6 +92,27 @@ module.exports = function (app, db, requireAuth, requireRole) {
                 visitId: null,
                 currentVisits: []
             });
+        }
+    });
+
+    // Nurse history route
+    app.get('/nurse/history', requireAuth, requireRole('nurse'), async (req, res) => {
+        try {
+            const query = req.query.q || '';
+            const history = await daos.visits.searchNurseHistory(req.session.userId, query);
+
+            // Process dates
+            processVisitsWithAge(history);
+
+            res.render('nurse-history', {
+                user: req.session,
+                history: history || [],
+                searchQuery: query,
+                moment: require('moment')
+            });
+        } catch (err) {
+            console.error('Error loading nurse history:', err);
+            res.status(500).send('Database error');
         }
     });
 

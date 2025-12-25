@@ -158,10 +158,77 @@ class VisitDAO {
             LEFT JOIN nursing_assessments na ON na.submission_id = fs.submission_id
             LEFT JOIN user_signatures us ON na.nurse_signature_id = us.signature_id
             WHERE (pv.created_by = ? OR pv.created_by = 'hl7-system') 
-            AND pv.visit_status = 'completed' AND na.assessment_id IS NOT NULL
+            AND fs.submission_status = 'submitted' AND na.assessment_id IS NOT NULL
             ORDER BY pv.visit_date DESC, pv.created_at DESC
             LIMIT ?
         `, [userId, limit]);
+    }
+
+    /**
+     * Search nurse history (Completed assessments with filter)
+     * @param {string} userId - Nurse user ID
+     * @param {string} searchQuery - Search term (Name or SSN)
+     * @returns {Promise<Array>}
+     */
+    async searchNurseHistory(userId, searchQuery = '') {
+        const query = searchQuery ? `% ${searchQuery.toLowerCase()}% ` : '%';
+
+        return this._all(`
+SELECT
+pv.visit_id, pv.patient_ssn, pv.visit_date, pv.visit_status,
+    pv.primary_diagnosis, pv.secondary_diagnosis, pv.diagnosis_code,
+    pv.department,
+    p.full_name as patient_name, p.medical_number, p.date_of_birth, p.gender,
+    na.assessment_id, fs.submission_status, fs.submitted_at
+            FROM patient_visits pv
+            JOIN patients p ON pv.patient_ssn = p.ssn
+            JOIN form_submissions fs ON fs.visit_id = pv.visit_id AND fs.form_id = 'form-05-uuid'
+            JOIN nursing_assessments na ON na.submission_id = fs.submission_id
+            WHERE fs.submitted_by = ?
+    AND fs.submission_status = 'submitted'
+AND(
+    lower(p.full_name) LIKE ? OR 
+                p.ssn LIKE ? OR 
+                p.medical_number LIKE ?
+            )
+            ORDER BY fs.submitted_at DESC
+            LIMIT 50
+    `, [userId, query, query, query]);
+    }
+
+    /**
+     * Search radiologist history
+     * @param {string} userId - Radiologist user ID
+     * @param {string} searchQuery - Search term (Name or SSN)
+     * @returns {Promise<Array>}
+     */
+    async searchRadiologistHistory(userId, searchQuery = '') {
+        const query = searchQuery ? `% ${searchQuery.toLowerCase()}% ` : '%';
+
+        return this._all(`
+SELECT
+pv.visit_id, pv.patient_ssn, pv.visit_date, pv.visit_status,
+    pv.primary_diagnosis, pv.department,
+    p.full_name as patient_name, p.medical_number, p.date_of_birth, p.gender,
+    CASE 
+                    WHEN pet.record_id IS NOT NULL THEN 'PET CT'
+                    WHEN ref.id IS NOT NULL THEN 'Radiology'
+                    ELSE 'Unknown'
+END as form_type,
+    COALESCE(ref.updated_at, ref.created_at, pet.updated_at, pet.created_at) as completed_at
+            FROM patient_visits pv
+            JOIN patients p ON pv.patient_ssn = p.ssn
+            LEFT JOIN radiology_examination_form ref ON ref.visit_id = pv.visit_id AND ref.created_by = ?
+    LEFT JOIN pet_ct_records pet ON pet.visit_id = pv.visit_id AND pet.created_by = ?
+        WHERE(ref.id IS NOT NULL OR pet.record_id IS NOT NULL)
+            AND(
+            lower(p.full_name) LIKE ? OR 
+                p.ssn LIKE ? OR 
+                p.medical_number LIKE ?
+            )
+            ORDER BY completed_at DESC
+            LIMIT 50
+    `, [userId, userId, query, query, query]);
     }
 
     /**
@@ -185,7 +252,7 @@ class VisitDAO {
             WHERE visit_date >= datetime('now', '-' || ? || ' days')
             GROUP BY DATE(visit_date)
             ORDER BY DATE(visit_date)
-        `, [days]);
+    `, [days]);
     }
 
     /**
@@ -210,9 +277,9 @@ class VisitDAO {
      */
     async getTodayStats() {
         return this._get(`
-            SELECT 
-                (SELECT COUNT(*) FROM patient_visits WHERE DATE(visit_date) = DATE('now')) as new_visits,
-                (SELECT COUNT(*) FROM patient_visits WHERE visit_status = 'completed' AND DATE(completed_at) = DATE('now')) as completed
+SELECT
+    (SELECT COUNT(*) FROM patient_visits WHERE DATE(visit_date) = DATE('now')) as new_visits,
+    (SELECT COUNT(*) FROM patient_visits WHERE visit_status = 'completed' AND DATE(completed_at) = DATE('now')) as completed
         `);
     }
 

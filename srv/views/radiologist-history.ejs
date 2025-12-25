@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <%- include('partials/head', { title: 'Radiology History' }) %>
+</head>
+
+<body class="bg-light">
+    <!-- Navbar -->
+    <%- include('navigation', { currentPage: 'history' }) %>
+
+        <div class="container py-4">
+            <div class="row">
+                <!-- Main Content -->
+                <div class="col-12">
+                    <!-- Header & Search -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h4 class="mb-1 text-primary fw-bold">Radiology History</h4>
+                            <p class="text-muted mb-0">View and search past radiology reports</p>
+                        </div>
+                        <div>
+                            <a href="/radiologist" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Search Card -->
+                    <div class="card border-0 shadow-sm rounded-3 mb-4">
+                        <div class="card-body p-4">
+                            <form action="/radiologist/history" method="GET" class="row g-3">
+                                <div class="col-md-10">
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-end-0">
+                                            <i class="bi bi-search text-muted"></i>
+                                        </span>
+                                        <input type="text" class="form-control border-start-0 bg-light ps-0" name="q"
+                                            placeholder="Search by patient name, SSN, or medical number..."
+                                            value="<%= searchQuery %>">
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="submit" class="btn btn-primary w-100 h-100">
+                                        Search
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Results Grid -->
+                    <% if (history && history.length> 0) { %>
+                        <div class="row g-3">
+                            <% history.forEach(visit=> { %>
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="card h-100 border-0 shadow-sm rounded-3 hover-shadow transition-all">
+                                        <div class="card-body p-3">
+                                            <!-- Header: Date & Type -->
+                                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                                <div>
+                                                    <div class="fw-medium text-dark small">
+                                                        <i class="bi bi-calendar-check me-1 text-muted"></i>
+                                                        <%= visit.completed_at ? new
+                                                            Date(visit.completed_at).toLocaleDateString() : 'N/A' %>
+                                                    </div>
+                                                    <div class="text-xs text-muted ms-4">
+                                                        <%= visit.completed_at ? new
+                                                            Date(visit.completed_at).toLocaleTimeString([],
+                                                            {hour: '2-digit' , minute:'2-digit'}) : '' %>
+                                                    </div>
+                                                </div>
+                                                <% if (visit.form_type==='PET CT' ) { %>
+                                                    <span
+                                                        class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill">PET
+                                                        CT</span>
+                                                    <% } else if (visit.form_type==='Radiology' ) { %>
+                                                        <span
+                                                            class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">Radiology</span>
+                                                        <% } else { %>
+                                                            <span
+                                                                class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill">Unknown</span>
+                                                            <% } %>
+                                            </div>
+
+                                            <!-- Patient Info -->
+                                            <div class="d-flex align-items-center mb-3">
+                                                <div
+                                                    class="avatar-circle bg-info-subtle text-info me-3 small flex-shrink-0">
+                                                    <%= (visit.patient_name || 'U' ).charAt(0).toUpperCase() %>
+                                                </div>
+                                                <div class="overflow-hidden">
+                                                    <h6 class="fw-bold text-dark mb-0 text-truncate">
+                                                        <%= visit.patient_name %>
+                                                    </h6>
+                                                    <div class="small text-muted">
+                                                        <%= visit.gender %>, <%= visit.calculated_age || 'N/A' %>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Department -->
+                                            <div class="mb-3">
+                                                <small class="text-muted d-block mb-1">Department</small>
+                                                <div class="fw-medium text-dark">
+                                                    <%= visit.department || 'General' %>
+                                                </div>
+                                            </div>
+
+                                            <!-- Footer: Status & Action -->
+                                            <div
+                                                class="d-flex justify-content-between align-items-center pt-3 border-top">
+                                                <span class="badge bg-success-subtle text-success rounded-pill px-2">
+                                                    <i class="bi bi-check-circle-fill me-1"></i>Completed
+                                                </span>
+                                                <a href="/radiologist/view-assessment/<%= visit.visit_id %>"
+                                                    class="btn btn-sm btn-outline-primary rounded-pill px-3 stretched-link">
+                                                    View Report
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <% }); %>
+                        </div>
+                        <% } else { %>
+                            <div class="card border-0 shadow-sm rounded-3">
+                                <div class="card-body py-5 text-center">
+                                    <div class="text-muted">
+                                        <i class="bi bi-clipboard-x display-4 mb-3 d-block opacity-25"></i>
+                                        <p class="mb-0">No radiology reports found matching your search.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <% } %>
+
+                </div>
+            </div>
+        </div>
+
+        <%- include('partials/scripts') %>
+</body>
+
+</html>

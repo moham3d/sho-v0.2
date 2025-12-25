@@ -65,7 +65,7 @@
         <% } %>
 
             <!-- Filters -->
-            <section class="card mb-4" aria-labelledby="filter-heading">
+            <section class="card mb-4 border-0 shadow-sm bg-white rounded-3" aria-labelledby="filter-heading">
                 <h2 id="filter-heading" class="visually-hidden">Filter Users</h2>
                 <div class="card-body">
                     <form method="GET" role="search" aria-label="Search and filter users">
@@ -115,9 +115,10 @@
             </section>
 
             <!-- Users Table -->
-            <section class="card" aria-labelledby="users-table-heading">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h2 id="users-table-heading" class="h5 mb-0">
+            <section class="card border-0 shadow-sm bg-white rounded-3" aria-labelledby="users-table-heading">
+                <div
+                    class="card-header border-0 bg-white px-4 pt-4 pb-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h2 id="users-table-heading" class="h5 mb-0 fw-bold text-primary">
                         <i class="fas fa-users me-2" aria-hidden="true"></i>Users (<%= users.length %>)
                     </h2>
                 </div>
